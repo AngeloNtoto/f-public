@@ -31,7 +31,9 @@ ui_*.h
 qrc_*.cpp
 Thumbs.db
 *.res
-*.rc
+# On permet le fichier app.rc pour les propriétés Windows
+#*.rc
+!app.rc
 /.qmake.cache
 /.qmake.stash
 **/.qmlls.ini
