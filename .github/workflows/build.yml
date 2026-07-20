@@ -142,13 +142,20 @@ jobs:
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
-          # Copier TOUTES les bibliothèques Qt et dépendances nécessaires
+          # Copier TOUTES les bibliothèques Qt et dépendances nécessaires pour l'exécutable
           for lib in $(ldd build/app | grep -E "Qt|icu|libxcb|libxkb|libGL" | awk '{print $3}'); do
             [ -f "$lib" ] && cp "$lib" release_package/lib/
           done
 
           # Copier les plugins Qt (indispensable pour le démarrage)
           for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration imageformats; do
+            [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
+          done
+
+          # Scanner les plugins copiés pour inclure LEURS dépendances (wayland, xcb, etc.)
+          for lib in $(find release_package/plugins -name "*.so" -exec ldd {} \; | grep -E "Qt|icu|libxcb|libxkb|libGL|wayland|ffi" | awk '{print $3}'); do
+            [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
+          done
             [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
           done
 

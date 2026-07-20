@@ -1,0 +1,25 @@
+#include <windows.h>
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040C04B0"
+        BEGIN
+            VALUE "CompanyName",      "Nartrixsoft"
+            VALUE "FileDescription",  "Fonction Publique Kwilu - Plateforme Administrative"
+            VALUE "FileVersion",      "1.0.0"
+            VALUE "InternalName",     "fonctionpublique"
+            VALUE "LegalCopyright",   "© 2026 Nartrixsoft. Tous droits réservés."
+            VALUE "OriginalFilename", "app.exe"
+            VALUE "ProductName",      "Fonction Publique Kwilu"
+            VALUE "ProductVersion",   "1.0.0"
+        END 
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x040C, 1200
+    END
+END
