@@ -135,7 +135,7 @@ jobs:
           SectionEnd
           "@ | Out-File -FilePath installer.nsi -Encoding UTF8
 
-          makensis installer.nsi
+          & "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
 
       - name: Deploy Linux (Zip + Deb + Run)
         if: matrix.os == 'ubuntu'
@@ -143,22 +143,21 @@ jobs:
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
-          # On ajoute Qt6_DIR/lib au path pour que ldd puisse résoudre les dépendances des plugins
+          # On ajoute Qt6_DIR/lib au path
           export LD_LIBRARY_PATH="$Qt6_DIR/lib:$LD_LIBRARY_PATH"
 
-          # Copier TOUTES les bibliothèques Qt et dépendances nécessaires pour l'exécutable
-          for lib in $(ldd build/app | grep -E "Qt|icu|xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
+          # METHODE INFAILLIBLE : On copie simplement toutes les libs Qt et ICU fournies par l'installation
+          cp -n $Qt6_DIR/lib/libQt6*.so* release_package/lib/ 2>/dev/null || true
+          cp -n $Qt6_DIR/lib/libicu*.so* release_package/lib/ 2>/dev/null || true
+
+          # On copie également les dépendances système critiques (xcb, wayland, xkb) liées à notre exécutable
+          for lib in $(ldd build/app | grep -E "xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
             [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
 
           # Copier les plugins Qt (indispensable pour le démarrage)
           for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration imageformats; do
             [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
-          done
-
-          # Scanner les plugins pour copier LEURS sous-dépendances
-          for lib in $(find release_package/plugins -name "*.so" -exec ldd {} \; | grep -E "Qt|icu|xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
-            [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
 
           # Script de lancement portable
