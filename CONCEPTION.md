@@ -18,12 +18,45 @@ Elle permet de centraliser les données, suivre les indicateurs clés et produir
 
 Fonctions principales :
 
-- Gestion des dossiers agents
+- Gestion des dossiers agents (Nom complet,)
 - Suivi des congés et absences
 - Gestion des événements de carrière (décès, désertion)
 - Inventaire des cartes biométriques
 - Statistiques mensuelles et annuelles
+- Cadre organique
+Champs agents (formulaire) :
 
+- Ministère
+- Secrétariat général
+- Direction
+- Division
+- Bureau
+- Nom
+- Postnom
+- Prénom
+- Sexe
+- État civil
+- Date de naissance
+- Matricule
+- Domaine
+- Grade statutaire
+- Fonction
+- Date d'engagement
+- Réf. acte d'engagement
+- Réf. acte de nomination
+- Réf. acte de commissionnement
+- Niveau d'étude
+- Filière
+- Position administrative
+- Niveau d'affectation
+- Province
+- Lieu d'affectation
+- Salaire perçu
+- Prime perçue
+- Statut recensement
+- Numéro téléphone
+- Adresse email
+- Adresse
 Indicateurs clés :
 
 - Nombre d'agents
@@ -36,7 +69,82 @@ Indicateurs clés :
 
 Fonctions principales :
 
-- Enregistrement des entités : ONG, ASBL, fondations, établissements d'utilité publique (EUP)
+- Enregistrement des entités (ONG, ASBL, fondations, établissements d'utilité publique - EUP)
+	- Fiche de demande d'identification :
+		- Numéro d'enregistrement
+		- Date de réception
+		- Identification de l'organisation :
+			- Dénomination officielle, sigle
+			- Nature juridique
+			- Date de création
+			- Date de début des activités dans la province
+			- Numéro de personnalité juridique (ou d'autorisation)
+			- Autorité ayant délivré
+			- Adresse du siège social
+			- Adresse complète dans la province (ex. Kwilu)
+			- Téléphone, E-mail, Site internet (si applicable)
+		- Identification du représentant légal :
+			- Noms, fonction, nationalité
+			- Téléphone, adresse électronique, adresse physique
+		- Composition de l'organe dirigeant : (numéro, nom et postnom, fonction, téléphone, email)
+		- Domaine d'intervention (cocher) :
+			- Agriculture et développement rural
+			- Sécurité alimentaire
+			- Élevage
+			- Éducation / formation professionnelle
+			- Eau, hygiène et assainissement
+			- Santé, nutrition
+			- Environnement et changement climatique
+			- Développement communautaire
+			- Genre et autonomisation de la femme
+			- Promotion des droits humains
+			- Entrepreneuriat et emploi
+			- Assistance humanitaire
+			- Autres
+		- Zone d'intervention (cocher) :
+			- Bandundu
+			- Kikwit
+			- Bagata
+			- Bulungu
+			- Gungu
+			- Idiofa
+			- Masi-Manimba
+		- Partenaires techniques et financiers (table) :
+			- Num. d'ordre, Nom du partenaire, Pays/organisation, Financement reçu, Projet réalisé, Période
+		- Effectif de l'organisation (table) :
+			- Num. d'ordre, Catégorie du personnel (permanent / temporaire / volontaire), Effectif
+		- Principaux projets en cours (table) :
+			- Num. d'ordre, Intitulé du projet, Localisation, Coût du projet, Source de financement, Période
+		- Documents annexes (cocher) :
+			- Lettre de demande, Statuts, Acte constitutif, Règlement intérieur, Personnalité juridique, Liste des membres dirigeants, Pièce d'identité, CV, Plan d'action, Rapport d'activité, Preuve de paiement, Autre
+		- Déclarations :
+			- Observations
+			- Décision (dossier confirmé, dossier à compléter, enregistrement accordé, enregistrement refusé)
+
+- Mission de vérification sur terrain
+	- Rapport certifié de mission :
+		- Équipe de mission (Noms et fonctions)
+		- Situation administrative et juridique (Vérification des documents fournis)
+		- Gouvernance et fonctionnement institutionnel (AG fonctionnelle, CA, Comité de gestion, Coordination Exécutive)
+		- Ressources humaines et matérielles (Effectifs, bureaux fonctionnels, équipements disponibles)
+		- Vérification des projets et activités (Secteurs d'intervention, réalisations observées, niveau d'exécution : Très satisfaisant, Satisfaisant, Moyen, Faible)
+		- Impact communautaire (Confirmation par les bénéficiaires)
+		- Contraintes et insuffisances observées
+		- Conclusion de la mission (Existe et exerce, Existe avec insuffisances, Ne remplit pas les conditions)
+		- Recommandations (À la structure, À la Division Provinciale)
+
+- Suivi des projets
+	- Fiche de suivi des projets :
+		- Nom de l'Organisation
+		- Titre du projet
+		- Localisation
+		- Bailleur
+		- Budget
+		- Durée
+		- Bénéficiaire
+		- État d'avancement
+		- Observations
+
 - Certification et suivi des dossiers
 - Évaluation des performances et conformité
 - Publication des rapports par entité
@@ -46,6 +154,8 @@ Indicateurs clés :
 - Nombre d'entités certifiées
 - Nombre d'enregistrements validés
 - Score de performance des EUP
+- Nombre de missions de vérification réalisées
+- Nombre de projets suivis
 
 ### 3. Module Secteurs productifs
 
@@ -92,7 +202,32 @@ Indicateurs clés :
 
 Fonctions principales :
 
-- Gestion du courrier entrant
+- Gestion du courrier entrant (nature(rapport,lettres,factures,invitations,faire part,dossier))
+- Autorisation de sortie :
+	- N° de l'autorisation
+	- Noms de l'agent
+	- Grade
+	- Matricule
+	- Fonction
+	- Service
+	- Destination / Trajet (Se rendant à)
+	- Motif de déplacement
+	- Durée
+	- Date de départ prévue
+	- Date de retour probable
+	- Mode de transport
+	- Mentions spéciales éventuelles
+- Gestion de présence :
+	- Numéro
+	- Nom
+	- Post-nom
+	- Matricule
+	- Grade
+	- Heure d'arrivée
+	- Heure de départ
+	- Jour / Date
+	- Mois
+	- Signature
 - Suivi des stagiaires (identité, période, établissement)
 - Évaluation administrative
 - Classement des documents et archivage
@@ -100,98 +235,7 @@ Fonctions principales :
 Indicateurs clés :
 
 - Nombre de courriers reçus
+- Nombre d'autorisations de sortie délivrées
+- Taux de présence
 - Nombre de stagiaires suivis
 - Résultats d'évaluation
-
-## Architecture proposée
-
-### Vue générale
-
-- Interface utilisateur web responsive
-- API REST ou GraphQL
-- Base de données relationnelle
-- Authentification et rôles utilisateurs
-
-### Composants
-
-- Frontend : pages de tableau de bord, formulaires, listes, détails
-- Backend : services métier, validation, calculs d'indicateurs
-- Base de données : schéma des entités et relations
-- Reporting : export PDF/CSV et visualisations
-
-## Modèle de données
-
-### Entités principales
-
-- Agent
-- DossierAgent
-- Congé
-- EvenementRH (décès, désertion, mutation)
-- CarteBiometrique
-- EntiteSociale (ONG, ASBL, Fondation, EUP)
-- ProjetInfrastructure
-- ActiviteAgricole
-- Elevage
-- StatistiqueIndustrielle
-- Courrier
-- Stagiaire
-
-### Relations clés
-
-- Un `Agent` peut avoir plusieurs `Congé`
-- Un `Agent` peut avoir une `CarteBiometrique`
-- Une `EntiteSociale` peut avoir plusieurs certifications et rapports
-- Un `ProjetInfrastructure` dépend d'un type de projet et d'un budget
-- Un `Stagiaire` est lié à un service ou un département
-
-## Interfaces utilisateur
-
-### Menu principal
-
-- Dashboard
-- Ressources humaines
-- Secteurs sociaux
-- Secteurs productifs
-- Infrastructures
-- Secrétariat
-- Rapports
-- Administration
-
-### Tableaux de bord
-
-- Vue synthétique des indicateurs par domaine
-- Graphiques : évolution des congés, projets, entités certifiées
-- Widgets de suivi rapide
-
-### Pages de gestion
-
-- Liste des agents
-- Détail d'un agent
-- Gestion des congés
-- Liste des entités sociales
-- Fiches projets
-- Journal du courrier
-- Suivi des stagiaires
-
-## Cas d'usage
-
-### Exemple 1 : Suivi d'un agent
-
-1. Recherche d'un agent par nom ou matricule
-2. Consultation du dossier physique et des congés
-3. Ajout d'un événement RH (décès, désertion, mutation)
-4. Mise à jour du statut de la carte biométrique
-
-### Exemple 2 : Enregistrement d'une entité sociale
-
-1. Ajout d'une ONG/ASBL/EUP
-2. Vérification de la conformité
-3. Attribution d'un statut de certification
-4. Suivi et mise à jour des performances
-
-### Exemple 3 : Gestion d'un projet d'infrastructure
-
-1. Création d'un projet avec coût et durée
-2. Suivi de l'état d'avancement
-3. Comparaison entre durée planifiée et réalisée
-4. Génération d'un rapport pour le décideur
