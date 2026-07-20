@@ -24,6 +24,11 @@
 #include <QFileDialog>
 #include <QLineEdit>
 #include <QStyle>
+#include <QStyledItemDelegate>
+#include <QPainter>
+#include <QStyleOptionProgressBar>
+#include <QProgressBar>
+#include <QApplication>
 #include "MissionVerificationDialog.hpp"
 #include "FicheAgentDialog.hpp"
 
@@ -93,18 +98,8 @@ void MainWindow::setupUi()
     stackedWidget->addWidget(createDashboardPage());
     stackedWidget->addWidget(createRhPage());
     stackedWidget->addWidget(createSecteursSociauxPage());
-    
-    // Placeholders pour les pages non encore détaillées
-    QWidget *prodPage = new QWidget();
-    QVBoxLayout *prodLayout = new QVBoxLayout(prodPage);
-    prodLayout->addWidget(new QLabel("<h2>Secteurs Productifs (En construction)</h2>"));
-    stackedWidget->addWidget(prodPage);
-    
-    QWidget *infraPage = new QWidget();
-    QVBoxLayout *infraLayout = new QVBoxLayout(infraPage);
-    infraLayout->addWidget(new QLabel("<h2>Infrastructures (En construction)</h2>"));
-    stackedWidget->addWidget(infraPage);
-    
+    stackedWidget->addWidget(createSecteursProductifsPage());
+    stackedWidget->addWidget(createInfrastructuresPage());
     stackedWidget->addWidget(createSecretariatPage());
 
     mainLayout->addWidget(sidebar);
@@ -568,6 +563,158 @@ QWidget* MainWindow::createSecretariatPage()
     tabWidget->addTab(tabPresence, "Gestion des Présences");
     
     layout->addWidget(tabWidget);
+    return page;
+}
+
+QWidget* MainWindow::createSecteursProductifsPage()
+{
+    QWidget *page = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(20, 20, 20, 20);
+    
+    // Header
+    QHBoxLayout *headerLayout = new QHBoxLayout();
+    QLabel *title = new QLabel("<h2>Secteurs Productifs - Entreprises & Coopératives</h2>");
+    headerLayout->addWidget(title);
+    headerLayout->addStretch();
+    
+    // Stats rapides
+    QFrame *statFrame = new QFrame();
+    statFrame->setStyleSheet("background-color: #f39c12; color: white; border-radius: 8px; padding: 10px;");
+    QHBoxLayout *statLayout = new QHBoxLayout(statFrame);
+    statLayout->addWidget(new QLabel("<b>Agréments délivrés ce mois :</b> 12"));
+    statLayout->addSpacing(20);
+    statLayout->addWidget(new QLabel("<b>Recettes estimées :</b> 4,500 $"));
+    headerLayout->addWidget(statFrame);
+    
+    layout->addLayout(headerLayout);
+    
+    // Table
+    prodModel = new QSqlTableModel(this);
+    prodModel->setTable("Entreprises");
+    prodModel->select();
+    
+    prodModel->setHeaderData(1, Qt::Horizontal, "Nom de l'Entité");
+    prodModel->setHeaderData(2, Qt::Horizontal, "Catégorie (PME, Coopérative...)");
+    prodModel->setHeaderData(3, Qt::Horizontal, "Numéro RCCM");
+    prodModel->setHeaderData(4, Qt::Horizontal, "Statut Fiscal");
+    
+    QTableView *tableView = new QTableView();
+    tableView->setModel(prodModel);
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    layout->addWidget(tableView);
+    
+    // Boutons
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    QPushButton *btnAdd = new QPushButton("Enregistrer une nouvelle Entité");
+    QPushButton *btnLicence = new QPushButton("Délivrer une Licence d'Exploitation");
+    
+    btnAdd->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px;");
+    btnLicence->setStyleSheet("padding: 8px; background-color: #2980b9; color: white; border-radius: 4px;");
+    
+    connect(btnAdd, &QPushButton::clicked, [this]() {
+        int row = prodModel->rowCount();
+        prodModel->insertRow(row);
+    });
+    
+    btnLayout->addWidget(btnAdd);
+    btnLayout->addWidget(btnLicence);
+    btnLayout->addStretch();
+    
+    layout->addLayout(btnLayout);
+    
+    return page;
+}
+
+class ProgressBarDelegate : public QStyledItemDelegate {
+public:
+    ProgressBarDelegate(QObject *parent = nullptr) : QStyledItemDelegate(parent) {}
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
+        int progress = index.data().toInt();
+        QStyleOptionProgressBar progressBarOption;
+        progressBarOption.rect = option.rect.adjusted(4, 4, -4, -4);
+        progressBarOption.minimum = 0;
+        progressBarOption.maximum = 100;
+        progressBarOption.progress = progress;
+        progressBarOption.text = QString::number(progress) + "%";
+        progressBarOption.textVisible = true;
+        
+        QApplication::style()->drawControl(QStyle::CE_ProgressBar, &progressBarOption, painter);
+    }
+};
+
+QWidget* MainWindow::createInfrastructuresPage()
+{
+    QWidget *page = new QWidget();
+    QVBoxLayout *layout = new QVBoxLayout(page);
+    layout->setContentsMargins(20, 20, 20, 20);
+    
+    QLabel *title = new QLabel("<h2>Infrastructures & Travaux Publics</h2>");
+    layout->addWidget(title);
+    
+    // Cartes de KPIs
+    QHBoxLayout *kpiLayout = new QHBoxLayout();
+    
+    QFrame *card1 = new QFrame();
+    card1->setStyleSheet("background-color: #8e44ad; color: white; border-radius: 8px; padding: 15px;");
+    QVBoxLayout *cL1 = new QVBoxLayout(card1);
+    cL1->addWidget(new QLabel("<b>Projets Actifs</b>"));
+    cL1->addWidget(new QLabel("<h2>8</h2>"));
+    kpiLayout->addWidget(card1);
+    
+    QFrame *card2 = new QFrame();
+    card2->setStyleSheet("background-color: #c0392b; color: white; border-radius: 8px; padding: 15px;");
+    QVBoxLayout *cL2 = new QVBoxLayout(card2);
+    cL2->addWidget(new QLabel("<b>Budget Provincial Alloué</b>"));
+    cL2->addWidget(new QLabel("<h2>1,200,500 $</h2>"));
+    kpiLayout->addWidget(card2);
+    
+    layout->addLayout(kpiLayout);
+    
+    // Table
+    infraModel = new QSqlTableModel(this);
+    infraModel->setTable("ProjetsInfra");
+    infraModel->select();
+    
+    infraModel->setHeaderData(1, Qt::Horizontal, "Nom du Projet");
+    infraModel->setHeaderData(2, Qt::Horizontal, "Type (Route, Pont...)");
+    infraModel->setHeaderData(3, Qt::Horizontal, "Localisation");
+    infraModel->setHeaderData(4, Qt::Horizontal, "Budget Alloué");
+    infraModel->setHeaderData(5, Qt::Horizontal, "Avancement (%)");
+    
+    QTableView *tableView = new QTableView();
+    tableView->setModel(infraModel);
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    tableView->setItemDelegateForColumn(5, new ProgressBarDelegate(this));
+    
+    layout->addWidget(tableView);
+    
+    // Boutons
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    QPushButton *btnAdd = new QPushButton("Lancer un Nouveau Projet");
+    QPushButton *btnUpdate = new QPushButton("Sauvegarder l'Avancement");
+    
+    btnAdd->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px;");
+    btnUpdate->setStyleSheet("padding: 8px; background-color: #34495e; color: white; border-radius: 4px;");
+    
+    connect(btnAdd, &QPushButton::clicked, [this]() {
+        int row = infraModel->rowCount();
+        infraModel->insertRow(row);
+        infraModel->setData(infraModel->index(row, 5), 0); // avancement à 0
+    });
+
+    connect(btnUpdate, &QPushButton::clicked, [this]() {
+        infraModel->submitAll();
+    });
+    
+    btnLayout->addWidget(btnAdd);
+    btnLayout->addWidget(btnUpdate);
+    btnLayout->addStretch();
+    
+    layout->addLayout(btnLayout);
+    
     return page;
 }
 

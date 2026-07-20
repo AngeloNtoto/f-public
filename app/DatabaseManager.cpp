@@ -168,5 +168,17 @@ bool DatabaseManager::createTables()
         query.exec("INSERT OR IGNORE INTO Users (username, password, role) VALUES ('agentrh', '1234', 'Agent RH')");
     }
 
+    // Table Secteurs Productifs (Entreprises)
+    if (!query.exec("CREATE TABLE IF NOT EXISTS Entreprises (id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT, categorie TEXT, rccm TEXT, statut TEXT)")) {
+        qCritical() << "Erreur Entreprises:" << query.lastError().text();
+        success = false;
+    }
+
+    // Table Infrastructures
+    if (!query.exec("CREATE TABLE IF NOT EXISTS ProjetsInfra (id INTEGER PRIMARY KEY AUTOINCREMENT, nom TEXT, type TEXT, localisation TEXT, budget TEXT, avancement INTEGER)")) {
+        qCritical() << "Erreur ProjetsInfra:" << query.lastError().text();
+        success = false;
+    }
+
     return success;
 }

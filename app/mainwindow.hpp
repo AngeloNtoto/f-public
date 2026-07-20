@@ -32,6 +32,8 @@ private:
     QWidget* createDashboardPage();
     QWidget* createRhPage();
     QWidget* createSecteursSociauxPage();
+    QWidget* createSecteursProductifsPage();
+    QWidget* createInfrastructuresPage();
     QWidget* createSecretariatPage();
 
     QListWidget *sidebar;
@@ -41,6 +43,8 @@ private:
     QSqlTableModel *agentModel;
     QSqlRelationalTableModel *presencesModel;
     QSqlTableModel *orgModel;
+    QSqlTableModel *prodModel;
+    QSqlTableModel *infraModel;
 
     // UI Présences
     QComboBox *agentPresenceCombo;
