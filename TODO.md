@@ -66,8 +66,8 @@ C'est le module le plus complexe car il contient le plus de champs.
 ---
 
 ## 👥 Phase 4 : Module Ressources Humaines (Améliorations)
-- [ ] Remplacer l'édition directe du `QTableView` par un formulaire complet `FicheAgentDialog` pour inclure toutes les informations (Ministère, Direction, Salaire, Date d'engagement, etc.).
-- [ ] Mettre en place un système de recherche et de filtres en haut de la liste (rechercher par nom, filtrer par service).
+- [x] Remplacer l'édition directe du `QTableView` par un formulaire complet `FicheAgentDialog` pour inclure toutes les informations (Ministère, Direction, Salaire, Date d'engagement, etc.).
+- [x] Mettre en place un système de recherche et de filtres en haut de la liste (rechercher par nom, filtrer par service).
 
 ---
 

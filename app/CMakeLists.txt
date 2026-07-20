@@ -25,6 +25,8 @@ set(PROJECT_SOURCES
         IdentificationDialog.hpp
         MissionVerificationDialog.cpp
         MissionVerificationDialog.hpp
+        FicheAgentDialog.cpp
+        FicheAgentDialog.hpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

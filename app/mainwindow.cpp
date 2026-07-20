@@ -22,7 +22,9 @@
 #include <QPrintDialog>
 #include <QTextDocument>
 #include <QFileDialog>
+#include <QLineEdit>
 #include "MissionVerificationDialog.hpp"
+#include "FicheAgentDialog.hpp"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -113,6 +115,14 @@ QWidget* MainWindow::createRhPage()
     QLabel *title = new QLabel("<h2>Ressources Humaines - Liste des Agents</h2>", page);
     layout->addWidget(title);
 
+    // Barre de recherche
+    QHBoxLayout *searchLayout = new QHBoxLayout();
+    QLineEdit *searchEdit = new QLineEdit();
+    searchEdit->setPlaceholderText("Rechercher un agent par nom ou matricule...");
+    searchLayout->addWidget(new QLabel("Recherche :"));
+    searchLayout->addWidget(searchEdit);
+    layout->addLayout(searchLayout);
+
     // Initialisation du modèle SQL
     agentModel = new QSqlTableModel(this);
     agentModel->setTable("Agents");
@@ -130,34 +140,75 @@ QWidget* MainWindow::createRhPage()
     QTableView *tableView = new QTableView(page);
     tableView->setModel(agentModel);
     tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    tableView->setEditTriggers(QAbstractItemView::DoubleClicked); // Edition directe
+    tableView->setEditTriggers(QAbstractItemView::NoEditTriggers); // Pas d'édition directe
     tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     
     layout->addWidget(tableView);
+    
+    // Filtrage dynamique
+    connect(searchEdit, &QLineEdit::textChanged, [this](const QString &text) {
+        if(text.isEmpty()) {
+            agentModel->setFilter("");
+        } else {
+            agentModel->setFilter(QString("nom LIKE '%%1%' OR matricule LIKE '%%1%'").arg(text));
+        }
+        agentModel->select();
+    });
+
+    // Ouverture par double clic
+    connect(tableView, &QTableView::doubleClicked, [this, tableView](const QModelIndex &index) {
+        int row = index.row();
+        int agentId = agentModel->record(row).value("id").toInt();
+        FicheAgentDialog dialog(agentId, this);
+        if(dialog.exec() == QDialog::Accepted) {
+            agentModel->select();
+        }
+    });
 
     // Boutons d'action
     QHBoxLayout *btnLayout = new QHBoxLayout();
-    QPushButton *btnAdd = new QPushButton("Ajouter un agent", page);
+    QPushButton *btnAdd = new QPushButton("Nouveau Dossier Agent", page);
+    QPushButton *btnEdit = new QPushButton("Voir/Éditer Fiche", page);
     QPushButton *btnDelete = new QPushButton("Supprimer l'agent", page);
     
     btnAdd->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px;");
+    btnEdit->setStyleSheet("padding: 8px; background-color: #f39c12; color: white; border-radius: 4px;");
     btnDelete->setStyleSheet("padding: 8px; background-color: #e74c3c; color: white; border-radius: 4px;");
     
     connect(btnAdd, &QPushButton::clicked, [this]() {
-        int row = agentModel->rowCount();
-        agentModel->insertRow(row);
+        FicheAgentDialog dialog(this);
+        if(dialog.exec() == QDialog::Accepted) {
+            agentModel->select();
+            loadPresenceAgents();
+        }
+    });
+    
+    connect(btnEdit, &QPushButton::clicked, [this, tableView]() {
+        int row = tableView->currentIndex().row();
+        if(row >= 0) {
+            int agentId = agentModel->record(row).value("id").toInt();
+            FicheAgentDialog dialog(agentId, this);
+            if(dialog.exec() == QDialog::Accepted) {
+                agentModel->select();
+            }
+        }
     });
 
     connect(btnDelete, &QPushButton::clicked, [this, tableView]() {
         int row = tableView->currentIndex().row();
         if(row >= 0) {
-            agentModel->removeRow(row);
-            agentModel->submitAll();
-            agentModel->select(); // Refresh
+            auto reply = QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cet agent ?");
+            if (reply == QMessageBox::Yes) {
+                agentModel->removeRow(row);
+                agentModel->submitAll();
+                agentModel->select();
+                loadPresenceAgents();
+            }
         }
     });
 
     btnLayout->addWidget(btnAdd);
+    btnLayout->addWidget(btnEdit);
     btnLayout->addWidget(btnDelete);
     btnLayout->addStretch();
     

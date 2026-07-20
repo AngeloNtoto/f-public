@@ -65,6 +65,12 @@ bool DatabaseManager::createTables()
         success = false;
     }
 
+    // Ajout de colonnes à Agents si non existantes
+    query.exec("ALTER TABLE Agents ADD COLUMN ministere TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN direction TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN date_engagement TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN salaire TEXT");
+
     // Table AutorisationSortie
     if (!query.exec("CREATE TABLE IF NOT EXISTS AutorisationSortie ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
