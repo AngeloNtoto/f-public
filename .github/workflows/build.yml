@@ -156,8 +156,6 @@ jobs:
           for lib in $(find release_package/plugins -name "*.so" -exec ldd {} \; | grep -E "Qt|icu|libxcb|libxkb|libGL|wayland|ffi" | awk '{print $3}'); do
             [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
-            [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
-          done
 
           # Script de lancement portable
           cat > release_package/fpub.sh << 'LAUNCH'
