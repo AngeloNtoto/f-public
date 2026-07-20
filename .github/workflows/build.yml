@@ -76,14 +76,15 @@ jobs:
         if: matrix.os == 'windows'
         run: |
           mkdir release_package
-          Copy-Item build/Release/app.exe release_package/ -ErrorAction SilentlyContinue
-          if (-not (Test-Path release_package/app.exe)) { Copy-Item build/app.exe release_package/ }
-          windeployqt release_package/app.exe
+          Copy-Item build/Release/app.exe release_package/fpub.exe -ErrorAction SilentlyContinue
+          if (-not (Test-Path release_package/fpub.exe)) { Copy-Item build/app.exe release_package/fpub.exe }
+          windeployqt release_package/fpub.exe
           Compress-Archive -Path release_package\* -DestinationPath FonctionPublique-Windows.zip
 
       - name: Create Windows Installer (NSIS)
         if: matrix.os == 'windows'
         run: |
+          choco install nsis -y
           @"
           !include "MUI2.nsh"
 
@@ -110,11 +111,11 @@ jobs:
             File /r "release_package\*.*"
 
             ; Raccourci Bureau
-            CreateShortcut "`$DESKTOP\Fonction Publique Kwilu.lnk" "`$INSTDIR\app.exe"
+            CreateShortcut "`$DESKTOP\Fonction Publique Kwilu.lnk" "`$INSTDIR\fpub.exe"
 
             ; Raccourci Menu Démarrer
             CreateDirectory "`$SMPROGRAMS\Fonction Publique Kwilu"
-            CreateShortcut "`$SMPROGRAMS\Fonction Publique Kwilu\Fonction Publique.lnk" "`$INSTDIR\app.exe"
+            CreateShortcut "`$SMPROGRAMS\Fonction Publique Kwilu\Fonction Publique.lnk" "`$INSTDIR\fpub.exe"
             CreateShortcut "`$SMPROGRAMS\Fonction Publique Kwilu\Désinstaller.lnk" "`$INSTDIR\uninstall.exe"
 
             ; Désinstalleur
