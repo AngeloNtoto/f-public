@@ -81,16 +81,69 @@ jobs:
           windeployqt release_package/app.exe
           Compress-Archive -Path release_package\* -DestinationPath FonctionPublique-Windows.zip
 
-      - name: Deploy Linux (Zip)
+      - name: Deploy Linux (Zip + Deb)
         if: matrix.os == 'ubuntu'
         run: |
-          mkdir -p release_package
+          mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/
           # Copier les bibliothèques Qt nécessaires
-          ldd build/app | grep "Qt" | awk '{print $3}' | xargs -I{} cp {} release_package/ 2>/dev/null || true
-          cp -r $Qt6_DIR/plugins/platforms release_package/ 2>/dev/null || true
-          cp -r $Qt6_DIR/plugins/sqldrivers release_package/ 2>/dev/null || true
+          ldd build/app | grep "Qt" | awk '{print $3}' | xargs -I{} cp {} release_package/lib/ 2>/dev/null || true
+          cp -r $Qt6_DIR/plugins/platforms release_package/plugins/ 2>/dev/null || true
+          cp -r $Qt6_DIR/plugins/sqldrivers release_package/plugins/ 2>/dev/null || true
           zip -r FonctionPublique-Linux.zip release_package
+
+          # Construction du paquet .deb
+          PKG_DIR=fonctionpublique_1.0_amd64
+          mkdir -p $PKG_DIR/DEBIAN
+          mkdir -p $PKG_DIR/usr/local/bin
+          mkdir -p $PKG_DIR/usr/local/lib/fonctionpublique
+          mkdir -p $PKG_DIR/usr/share/applications
+
+          # Fichier de contrôle
+          cat > $PKG_DIR/DEBIAN/control << EOF
+          Package: fonctionpublique
+          Version: 1.0
+          Section: admin
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Angelo Ntoto <Angelontoto@gmail.com>
+          Description: Application de gestion de la Fonction Publique Provinciale (Kwilu)
+           Plateforme administrative pour la gestion du personnel, des ONG,
+           des secteurs productifs et des infrastructures.
+          EOF
+          # Retirer les espaces en trop du heredoc
+          sed -i 's/^          //' $PKG_DIR/DEBIAN/control
+
+          # Copier les fichiers
+          cp build/app $PKG_DIR/usr/local/bin/fonctionpublique
+          cp release_package/lib/* $PKG_DIR/usr/local/lib/fonctionpublique/ 2>/dev/null || true
+          cp -r release_package/plugins/* $PKG_DIR/usr/local/lib/fonctionpublique/ 2>/dev/null || true
+
+          # Script de lancement qui configure le LD_LIBRARY_PATH
+          cat > $PKG_DIR/usr/local/bin/fonctionpublique-launcher << 'LAUNCHER'
+          #!/bin/bash
+          export LD_LIBRARY_PATH=/usr/local/lib/fonctionpublique:$LD_LIBRARY_PATH
+          export QT_PLUGIN_PATH=/usr/local/lib/fonctionpublique
+          exec /usr/local/bin/fonctionpublique "$@"
+          LAUNCHER
+          sed -i 's/^          //' $PKG_DIR/usr/local/bin/fonctionpublique-launcher
+          chmod +x $PKG_DIR/usr/local/bin/fonctionpublique-launcher
+          chmod +x $PKG_DIR/usr/local/bin/fonctionpublique
+
+          # Fichier .desktop
+          cat > $PKG_DIR/usr/share/applications/fonctionpublique.desktop << 'DESKTOP'
+          [Desktop Entry]
+          Name=Fonction Publique Kwilu
+          Comment=Gestion administrative provinciale
+          Exec=fonctionpublique-launcher
+          Terminal=false
+          Type=Application
+          Categories=Office;
+          DESKTOP
+          sed -i 's/^          //' $PKG_DIR/usr/share/applications/fonctionpublique.desktop
+
+          dpkg-deb --build $PKG_DIR
+          mv ${PKG_DIR}.deb FonctionPublique-Linux.deb
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -99,6 +152,7 @@ jobs:
           files: |
             FonctionPublique-Windows.zip
             FonctionPublique-Linux.zip
+            FonctionPublique-Linux.deb
           name: "Fonction Publique - ${{ needs.bump_version.outputs.new_tag }}"
           body: "Build automatique C++ généré via GitHub Actions pour Windows et Linux."
           draft: false
