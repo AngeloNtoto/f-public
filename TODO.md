@@ -55,13 +55,13 @@ C'est le module le plus complexe car il contient le plus de champs.
 - [x] **Logique Transactionnelle :** Lors du clic sur "Enregistrer", utiliser `QSqlDatabase::transaction()` pour s'assurer que toutes les tables (Organisation, Projets, Dirigeants) sont insérées correctement.
 
 ### B. Rapport de Mission de Vérification
-- [ ] Créer un bouton "Ajouter Rapport de Vérification" sur la ligne d'une organisation sélectionnée.
-- [ ] Créer le formulaire de grille d'évaluation (Boutons radio pour Très Satisfaisant, Satisfaisant, Moyen, Faible).
-- [ ] Générer le rapport PDF officiel ("Rapport certifié de mission") avec les noms de l'équipe de mission et les conclusions.
+- [x] Créer un bouton "Ajouter Rapport de Vérification" sur la ligne d'une organisation sélectionnée.
+- [x] Créer le formulaire de grille d'évaluation (Boutons radio pour Très Satisfaisant, Satisfaisant, Moyen, Faible).
+- [x] Générer le rapport PDF officiel ("Rapport certifié de mission") avec les noms de l'équipe de mission et les conclusions.
 
 ### C. Certification
-- [ ] Implémenter la logique métier : Si "Décision = Enregistrement accordé" ET "Rapport de mission = Validé", débloquer le bouton "Imprimer Certificat d'Enregistrement".
-- [ ] Implémenter la génération PDF du Certificat d'Enregistrement (Format paysage A4, avec armoiries et sceau de la province).
+- [x] Implémenter la logique métier : Si "Décision = Enregistrement accordé" ET "Rapport de mission = Validé", débloquer le bouton "Imprimer Certificat d'Enregistrement".
+- [x] Implémenter la génération PDF du Certificat d'Enregistrement (Format paysage A4, avec armoiries et sceau de la province).
 
 ---
 

@@ -17,6 +17,12 @@
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QMessageBox>
+#include <QSqlRecord>
+#include <QPrinter>
+#include <QPrintDialog>
+#include <QTextDocument>
+#include <QFileDialog>
+#include "MissionVerificationDialog.hpp"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -168,16 +174,110 @@ QWidget* MainWindow::createSecteursSociauxPage()
     
     layout->addWidget(new QLabel("<h2>Secteurs Sociaux - ONGD & ASBL</h2>", page));
     
-    QPushButton *btnNewIdent = new QPushButton("Nouvelle Demande d'Identification", page);
+    // Tableau des organisations
+    orgModel = new QSqlTableModel(this);
+    orgModel->setTable("Organisations");
+    orgModel->select();
+    
+    QTableView *tableView = new QTableView(page);
+    tableView->setModel(orgModel);
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    
+    layout->addWidget(tableView);
+    
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    
+    QPushButton *btnNewIdent = new QPushButton("Nouvelle Demande d'Identification");
     btnNewIdent->setStyleSheet("padding: 10px; background-color: #f39c12; color: white; border-radius: 4px;");
+    
+    QPushButton *btnMission = new QPushButton("Rapport de Mission");
+    btnMission->setStyleSheet("padding: 10px; background-color: #3498db; color: white; border-radius: 4px;");
+    
+    QPushButton *btnCertif = new QPushButton("Générer Certificat");
+    btnCertif->setStyleSheet("padding: 10px; background-color: #27ae60; color: white; border-radius: 4px;");
     
     connect(btnNewIdent, &QPushButton::clicked, this, [this]() {
         IdentificationDialog dialog(this);
         dialog.exec();
+        orgModel->select(); // Refresh
     });
     
-    layout->addWidget(btnNewIdent);
-    layout->addStretch();
+    connect(btnMission, &QPushButton::clicked, this, [this, tableView]() {
+        int row = tableView->currentIndex().row();
+        if (row < 0) {
+            QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation.");
+            return;
+        }
+        int orgId = orgModel->record(row).value("id").toInt();
+        QString nomOrg = orgModel->record(row).value("denomination").toString();
+        
+        MissionVerificationDialog dialog(orgId, nomOrg, this);
+        dialog.exec();
+    });
+    
+    connect(btnCertif, &QPushButton::clicked, this, [this, tableView]() {
+        int row = tableView->currentIndex().row();
+        if (row < 0) {
+            QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation.");
+            return;
+        }
+        int orgId = orgModel->record(row).value("id").toInt();
+        QString nomOrg = orgModel->record(row).value("denomination").toString();
+        QString decision = orgModel->record(row).value("decision").toString();
+        
+        // Vérifier si la mission est validée
+        QSqlQuery qCheck;
+        qCheck.prepare("SELECT conclusion FROM MissionsVerification WHERE organisation_id = ?");
+        qCheck.addBindValue(orgId);
+        qCheck.exec();
+        
+        bool missionValidee = false;
+        if(qCheck.next()) {
+            if(qCheck.value(0).toString().contains("Favorable", Qt::CaseInsensitive)) {
+                missionValidee = true;
+            }
+        }
+        
+        if (decision != "Enregistrement Accordé" || !missionValidee) {
+            QMessageBox::warning(this, "Refus", "Le certificat ne peut être généré que si la décision est 'Enregistrement Accordé' ET que le rapport de mission est Favorable.");
+            return;
+        }
+        
+        // Générer Certificat
+        QString html = R"(
+            <h2 align="center">REPUBLIQUE DEMOCRATIQUE DU CONGO</h2>
+            <h3 align="center">PROVINCE DU KWILU</h3>
+            <hr>
+            <h1 align="center" style="color:green;">CERTIFICAT D'ENREGISTREMENT</h1>
+            <br>
+            <p align="center">Il est certifié que l'organisation <b>%1</b> a rempli toutes les conditions requises pour exercer ses activités dans la province du Kwilu, après vérification favorable de la mission de contrôle sur le terrain.</p>
+            <p align="center">Ce certificat est délivré pour servir et valoir ce que de droit.</p>
+            <br><br><br>
+            <p align="right">Fait à Bandundu, le %2</p>
+        )";
+        html = html.arg(nomOrg, QDate::currentDate().toString("dd/MM/yyyy"));
+        
+        QTextDocument document;
+        document.setHtml(html);
+        QString fileName = QFileDialog::getSaveFileName(this, "Sauvegarder le Certificat", "Certificat_" + nomOrg.replace(" ", "_") + ".pdf", "*.pdf");
+        if (!fileName.isEmpty()) {
+            QPrinter printer(QPrinter::HighResolution);
+            printer.setPageOrientation(QPageLayout::Landscape);
+            printer.setOutputFormat(QPrinter::PdfFormat);
+            printer.setOutputFileName(fileName);
+            document.print(&printer);
+            QMessageBox::information(this, "Succès", "Certificat généré !");
+        }
+    });
+    
+    btnLayout->addWidget(btnNewIdent);
+    btnLayout->addWidget(btnMission);
+    btnLayout->addWidget(btnCertif);
+    btnLayout->addStretch();
+    
+    layout->addLayout(btnLayout);
     return page;
 }
 

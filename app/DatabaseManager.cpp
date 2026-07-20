@@ -136,5 +136,20 @@ bool DatabaseManager::createTables()
         success = false;
     }
 
+    // Table MissionsVerification
+    if (!query.exec("CREATE TABLE IF NOT EXISTS MissionsVerification ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    "organisation_id INTEGER UNIQUE, "
+                    "date_mission TEXT, "
+                    "equipe TEXT, "
+                    "gouvernance TEXT, "
+                    "rh TEXT, "
+                    "constats TEXT, "
+                    "conclusion TEXT, "
+                    "FOREIGN KEY(organisation_id) REFERENCES Organisations(id))")) {
+        qCritical() << "Erreur MissionsVerification:" << query.lastError().text();
+        success = false;
+    }
+
     return success;
 }

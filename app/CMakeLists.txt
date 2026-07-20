@@ -23,6 +23,8 @@ set(PROJECT_SOURCES
         AutorisationSortieDialog.hpp
         IdentificationDialog.cpp
         IdentificationDialog.hpp
+        MissionVerificationDialog.cpp
+        MissionVerificationDialog.hpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

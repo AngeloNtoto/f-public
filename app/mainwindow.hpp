@@ -34,6 +34,7 @@ private:
     // Modèles de données
     QSqlTableModel *agentModel;
     QSqlRelationalTableModel *presencesModel;
+    QSqlTableModel *orgModel;
 
     // UI Présences
     QComboBox *agentPresenceCombo;
