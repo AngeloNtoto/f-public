@@ -72,10 +72,10 @@ C'est le module le plus complexe car il contient le plus de champs.
 ---
 
 ## 📊 Phase 5 : Tableaux de Bord (Dashboard)
-- [ ] Ajouter le module `Charts` (`QT += charts`) au fichier CMakeLists.txt.
-- [ ] **Graphique 1 (Barres) :** Nombre d'autorisations de sortie délivrées par mois.
-- [ ] **Graphique 2 (Secteurs / Pie Chart) :** Répartition des entités (ONG vs ASBL vs EUP).
-- [ ] **Indicateurs textuels (KPIs) :** Nombre total d'agents, Taux de présence du jour (Présents / Total Agents).
+- [x] Ajouter le module `Charts` (`QT += charts`) au fichier CMakeLists.txt.
+- [x] **Graphique 1 (Barres) :** Nombre d'autorisations de sortie délivrées par mois.
+- [x] **Graphique 2 (Secteurs / Pie Chart) :** Répartition des entités (ONG vs ASBL vs EUP).
+- [x] **Indicateurs textuels (KPIs) :** Nombre total d'agents, Taux de présence du jour (Présents / Total Agents).
 
 ---
 

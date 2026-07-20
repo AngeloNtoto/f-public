@@ -9,6 +9,11 @@
 #include <QTableView>
 #include <QComboBox>
 #include <QDateEdit>
+#include <QtCharts/QChartView>
+#include <QtCharts/QBarSeries>
+#include <QtCharts/QBarSet>
+#include <QtCharts/QPieSeries>
+#include <QtCharts/QChart>
 
 class MainWindow : public QMainWindow
 {
@@ -43,6 +48,13 @@ private:
     void loadPresenceAgents();
     void pointerArrivee();
     void pointerDepart();
+    
+    // Dashboard
+    QLabel *lblTotalAgents;
+    QLabel *lblPresenceRate;
+    QChart *barChart;
+    QChart *pieChart;
+    void refreshDashboard();
 };
 
 #endif // MAINWINDOW_HPP
