@@ -143,26 +143,47 @@ jobs:
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
+          echo "=== Démarrage du packaging Linux ==="
+          mkdir -p release_package/lib release_package/plugins
+          cp build/app release_package/fpub
+
           # Déduire dynamiquement la racine de Qt en regardant où ldd trouve libQt6Core.so
           QT_CORE_PATH=$(ldd build/app | grep libQt6Core.so | awk '{print $3}')
+          echo "[DEBUG] Chemin de libQt6Core.so : $QT_CORE_PATH"
+          
           QT_BASE_DIR=$(dirname $(dirname $QT_CORE_PATH))
+          echo "[DEBUG] Racine Qt déduite (QT_BASE_DIR) : $QT_BASE_DIR"
 
           # On ajoute le répertoire lib au PATH pour résoudre les dépendances (ldd)
           export LD_LIBRARY_PATH="$QT_BASE_DIR/lib:$LD_LIBRARY_PATH"
+          echo "[DEBUG] LD_LIBRARY_PATH : $LD_LIBRARY_PATH"
 
           # METHODE INFAILLIBLE : Copier TOUTES les libs Qt et ICU
+          echo "[DEBUG] Copie des bibliothèques Qt et ICU..."
           cp -n $QT_BASE_DIR/lib/libQt6*.so* release_package/lib/ 2>/dev/null || true
           cp -n $QT_BASE_DIR/lib/libicu*.so* release_package/lib/ 2>/dev/null || true
+          echo "[DEBUG] Nombre de librairies dans release_package/lib : $(ls release_package/lib | wc -l)"
 
           # Copier les dépendances système graphiques de l'application
+          echo "[DEBUG] Scan des dépendances système (xcb, wayland, etc.)..."
           for lib in $(ldd build/app | grep -E "xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
-            [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
+            if [ -f "$lib" ]; then
+              cp -n "$lib" release_package/lib/ 2>/dev/null || true
+              echo "  -> Copié : $lib"
+            fi
           done
 
           # Copier les plugins Qt indispensables
+          echo "[DEBUG] Copie des plugins Qt..."
           for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration wayland-graphics-integration-client imageformats; do
-            [ -d "$QT_BASE_DIR/plugins/$plugin_dir" ] && cp -r "$QT_BASE_DIR/plugins/$plugin_dir" release_package/plugins/
+            if [ -d "$QT_BASE_DIR/plugins/$plugin_dir" ]; then
+              cp -r "$QT_BASE_DIR/plugins/$plugin_dir" release_package/plugins/
+              echo "  -> Plugin copié : $plugin_dir"
+            else
+              echo "  /!\ Plugin introuvable : $QT_BASE_DIR/plugins/$plugin_dir"
+            fi
           done
+          echo "=== Fin de la copie des dépendances ==="
 
           # Script de lancement portable
           cat > release_package/fpub.sh << 'LAUNCH'
