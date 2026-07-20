@@ -33,7 +33,7 @@ set(PROJECT_SOURCES
 
 # Ajouter le fichier de ressources Windows (propriétés du .exe)
 if(WIN32)
-    list(APPEND PROJECT_SOURCES app.rc)
+    list(APPEND PROJECT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/app.rc)
 endif()
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

@@ -136,43 +136,47 @@ jobs:
 
           makensis installer.nsi
 
-      - name: Deploy Linux (Zip + Deb)
+      - name: Deploy Linux (Zip + Deb + Run)
         if: matrix.os == 'ubuntu'
         run: |
           mkdir -p release_package/lib release_package/plugins
-          cp build/app release_package/
+          cp build/app release_package/fpub
 
-          # Copier les bibliothèques Qt nécessaires
-          ldd build/app | grep -E "Qt|icu" | awk '{print $3}' | xargs -I{} cp {} release_package/lib/ 2>/dev/null || true
-          cp -r $Qt6_DIR/plugins/platforms release_package/plugins/ 2>/dev/null || true
-          cp -r $Qt6_DIR/plugins/sqldrivers release_package/plugins/ 2>/dev/null || true
-          cp -r $Qt6_DIR/plugins/xcbglintegrations release_package/plugins/ 2>/dev/null || true
-          cp -r $Qt6_DIR/plugins/wayland-shell-integration release_package/plugins/ 2>/dev/null || true
+          # Copier TOUTES les bibliothèques Qt et dépendances nécessaires
+          for lib in $(ldd build/app | grep -E "Qt|icu|libxcb|libxkb|libGL" | awk '{print $3}'); do
+            [ -f "$lib" ] && cp "$lib" release_package/lib/
+          done
 
-          # Script de lancement portable (résout le crash "no Qt platform plugin")
-          cat > release_package/FonctionPublique.sh << 'LAUNCH'
+          # Copier les plugins Qt (indispensable pour le démarrage)
+          for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration imageformats; do
+            [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
+          done
+
+          # Script de lancement portable
+          cat > release_package/fpub.sh << 'LAUNCH'
           #!/bin/bash
           SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
           export LD_LIBRARY_PATH="$SCRIPT_DIR/lib:$LD_LIBRARY_PATH"
           export QT_PLUGIN_PATH="$SCRIPT_DIR/plugins"
-          exec "$SCRIPT_DIR/app" "$@"
+          export QT_QPA_PLATFORM_PLUGIN_PATH="$SCRIPT_DIR/plugins/platforms"
+          exec "$SCRIPT_DIR/fpub" "$@"
           LAUNCH
-          sed -i 's/^          //' release_package/FonctionPublique.sh
-          chmod +x release_package/FonctionPublique.sh
-          chmod +x release_package/app
+          sed -i 's/^          //' release_package/fpub.sh
+          chmod +x release_package/fpub.sh
+          chmod +x release_package/fpub
 
           zip -r FonctionPublique-Linux.zip release_package
 
-          # Construction du paquet .deb
-          PKG_DIR=fonctionpublique_1.0_amd64
+          # ========== Paquet .deb ==========
+          PKG_DIR=fpub_1.0_amd64
           mkdir -p $PKG_DIR/DEBIAN
+          mkdir -p $PKG_DIR/opt/fpub/lib
+          mkdir -p $PKG_DIR/opt/fpub/plugins
           mkdir -p $PKG_DIR/usr/local/bin
-          mkdir -p $PKG_DIR/usr/local/lib/fonctionpublique/plugins
           mkdir -p $PKG_DIR/usr/share/applications
 
-          # Fichier de contrôle avec Nartrixsoft
           cat > $PKG_DIR/DEBIAN/control << EOF
-          Package: fonctionpublique
+          Package: fpub
           Version: 1.0
           Section: admin
           Priority: optional
@@ -181,52 +185,46 @@ jobs:
           Homepage: https://nartrixsoft.com
           Description: Fonction Publique Kwilu - Plateforme Administrative
            Application de gestion de la Fonction Publique Provinciale (Kwilu).
-           Développée par Nartrixsoft pour la gestion du personnel, des ONG,
-           des secteurs productifs et des infrastructures.
+           Développée par Nartrixsoft.
           EOF
           sed -i 's/^          //' $PKG_DIR/DEBIAN/control
 
-          # Copier les fichiers
-          cp build/app $PKG_DIR/usr/local/bin/fonctionpublique
-          cp release_package/lib/* $PKG_DIR/usr/local/lib/fonctionpublique/ 2>/dev/null || true
-          cp -r release_package/plugins/* $PKG_DIR/usr/local/lib/fonctionpublique/plugins/ 2>/dev/null || true
+          cp release_package/fpub $PKG_DIR/opt/fpub/
+          cp release_package/lib/* $PKG_DIR/opt/fpub/lib/ 2>/dev/null || true
+          cp -r release_package/plugins/* $PKG_DIR/opt/fpub/plugins/ 2>/dev/null || true
+          chmod +x $PKG_DIR/opt/fpub/fpub
 
-          # Script de lancement
-          cat > $PKG_DIR/usr/local/bin/fonctionpublique-launcher << 'LAUNCHER'
+          cat > $PKG_DIR/usr/local/bin/fpub << 'LAUNCHER'
           #!/bin/bash
-          export LD_LIBRARY_PATH=/usr/local/lib/fonctionpublique:$LD_LIBRARY_PATH
-          export QT_PLUGIN_PATH=/usr/local/lib/fonctionpublique/plugins
-          exec /usr/local/bin/fonctionpublique "$@"
+          export LD_LIBRARY_PATH=/opt/fpub/lib:$LD_LIBRARY_PATH
+          export QT_PLUGIN_PATH=/opt/fpub/plugins
+          export QT_QPA_PLATFORM_PLUGIN_PATH=/opt/fpub/plugins/platforms
+          exec /opt/fpub/fpub "$@"
           LAUNCHER
-          sed -i 's/^          //' $PKG_DIR/usr/local/bin/fonctionpublique-launcher
-          chmod +x $PKG_DIR/usr/local/bin/fonctionpublique-launcher
-          chmod +x $PKG_DIR/usr/local/bin/fonctionpublique
+          sed -i 's/^          //' $PKG_DIR/usr/local/bin/fpub
+          chmod +x $PKG_DIR/usr/local/bin/fpub
 
-          # Fichier .desktop
-          cat > $PKG_DIR/usr/share/applications/fonctionpublique.desktop << 'DESKTOP'
+          cat > $PKG_DIR/usr/share/applications/fpub.desktop << 'DESKTOP'
           [Desktop Entry]
           Name=Fonction Publique Kwilu
           Comment=Plateforme administrative - Nartrixsoft
-          Exec=fonctionpublique-launcher
+          Exec=fpub
           Terminal=false
           Type=Application
           Categories=Office;
           DESKTOP
-          sed -i 's/^          //' $PKG_DIR/usr/share/applications/fonctionpublique.desktop
+          sed -i 's/^          //' $PKG_DIR/usr/share/applications/fpub.desktop
 
           dpkg-deb --build $PKG_DIR
           mv ${PKG_DIR}.deb FonctionPublique-Linux.deb
 
-          # Construction de l'installateur .run (auto-extractible, universel)
+          # ========== Installateur .run ==========
           sudo apt-get install -y makeself
 
           INSTALLER_DIR=installer_payload
           mkdir -p $INSTALLER_DIR/app
-
-          # Copier tous les fichiers de l'application
           cp -r release_package/* $INSTALLER_DIR/app/
 
-          # Script d'installation exécuté après extraction
           cat > $INSTALLER_DIR/setup.sh << 'SETUP'
           #!/bin/bash
           echo ""
@@ -236,7 +234,7 @@ jobs:
           echo "╚══════════════════════════════════════════════════════════╝"
           echo ""
 
-          INSTALL_DIR="/opt/fonctionpublique"
+          INSTALL_DIR="/opt/fpub"
 
           echo "L'application sera installée dans : $INSTALL_DIR"
           read -p "Continuer l'installation ? [O/n] " confirm
@@ -250,41 +248,38 @@ jobs:
 
           sudo mkdir -p "$INSTALL_DIR"
           sudo cp -r app/* "$INSTALL_DIR/"
-          sudo chmod +x "$INSTALL_DIR/app"
-          sudo chmod +x "$INSTALL_DIR/FonctionPublique.sh"
+          sudo chmod +x "$INSTALL_DIR/fpub"
 
           # Créer le lanceur système
-          sudo cat > /tmp/fp-launcher.sh << 'INNER'
+          sudo tee /usr/local/bin/fpub > /dev/null << 'INNER'
           #!/bin/bash
-          export LD_LIBRARY_PATH=/opt/fonctionpublique/lib:$LD_LIBRARY_PATH
-          export QT_PLUGIN_PATH=/opt/fonctionpublique/plugins
-          exec /opt/fonctionpublique/app "$@"
+          export LD_LIBRARY_PATH=/opt/fpub/lib:$LD_LIBRARY_PATH
+          export QT_PLUGIN_PATH=/opt/fpub/plugins
+          export QT_QPA_PLATFORM_PLUGIN_PATH=/opt/fpub/plugins/platforms
+          exec /opt/fpub/fpub "$@"
           INNER
-          sudo mv /tmp/fp-launcher.sh /usr/local/bin/fonctionpublique
-          sudo chmod +x /usr/local/bin/fonctionpublique
+          sudo chmod +x /usr/local/bin/fpub
 
           # Raccourci dans le menu Applications
-          cat > /tmp/fonctionpublique.desktop << 'DSKTP'
+          sudo tee /usr/share/applications/fpub.desktop > /dev/null << 'DSKTP'
           [Desktop Entry]
           Name=Fonction Publique Kwilu
           Comment=Plateforme administrative - Nartrixsoft
-          Exec=fonctionpublique
+          Exec=fpub
           Terminal=false
           Type=Application
           Categories=Office;
           DSKTP
-          sudo mv /tmp/fonctionpublique.desktop /usr/share/applications/
 
           echo ""
           echo "✅ Installation terminée avec succès !"
-          echo "   Lancez l'application avec : fonctionpublique"
+          echo "   Lancez l'application avec : fpub"
           echo "   Ou depuis le menu Applications > Fonction Publique Kwilu"
           echo ""
           SETUP
           sed -i 's/^          //' $INSTALLER_DIR/setup.sh
           chmod +x $INSTALLER_DIR/setup.sh
 
-          # Générer le .run
           makeself $INSTALLER_DIR FonctionPublique-Linux-Setup.run \
             "Fonction Publique Kwilu - Nartrixsoft" \
             ./setup.sh
