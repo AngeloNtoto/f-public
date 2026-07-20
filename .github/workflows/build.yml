@@ -32,8 +32,10 @@ jobs:
         include:
           - platform: "windows-latest"
             os: "windows"
+            qt_arch: "win64_msvc2022_64"
           - platform: "ubuntu-22.04"
             os: "ubuntu"
+            qt_arch: "linux_gcc_64"
 
     runs-on: ${{ matrix.platform }}
 
@@ -42,12 +44,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt
-        uses: jurplel/install-qt-action@v3
+        uses: jurplel/install-qt-action@v4
         with:
-          version: '6.7.2'
-          host: ${{ matrix.os == 'windows' && 'windows' || 'linux' }}
+          version: '6.8.2'
           target: 'desktop'
-          arch: ${{ matrix.os == 'windows' && 'win64_msvc2019_64' || 'gcc_64' }}
+          arch: ${{ matrix.qt_arch }}
           modules: 'qtcharts'
 
       - name: Install Linux Dependencies
@@ -60,7 +61,7 @@ jobs:
         if: matrix.os == 'ubuntu'
         run: |
           mkdir build && cd build
-          cmake ../app -DCMAKE_BUILD_TYPE=Release
+          cmake ../app -DCMAKE_BUILD_TYPE=Release -G Ninja
           cmake --build . --config Release
 
       - name: Build Project (Windows)
@@ -75,20 +76,21 @@ jobs:
         if: matrix.os == 'windows'
         run: |
           mkdir release_package
-          # CMake with MSVC usually outputs in a Release subfolder
-          cp build/Release/app.exe release_package/ || cp build/app.exe release_package/
+          Copy-Item build/Release/app.exe release_package/ -ErrorAction SilentlyContinue
+          if (-not (Test-Path release_package/app.exe)) { Copy-Item build/app.exe release_package/ }
           windeployqt release_package/app.exe
           Compress-Archive -Path release_package\* -DestinationPath FonctionPublique-Windows.zip
 
-      - name: Deploy Linux (.deb & Zip)
+      - name: Deploy Linux (Zip)
         if: matrix.os == 'ubuntu'
         run: |
-          # Installation de CQtDeployer via snap (supporté nativement sur les runners ubuntu)
-          sudo snap install cqtdeployer
-          # Empaquetage du binaire et génération du .deb
-          cqtdeployer -bin build/app -qmake $(which qmake) -deb
-          # Compression du dossier autonome pour ceux qui ne veulent pas le .deb
-          zip -r FonctionPublique-Linux.zip DistributionKit
+          mkdir -p release_package
+          cp build/app release_package/
+          # Copier les bibliothèques Qt nécessaires
+          ldd build/app | grep "Qt" | awk '{print $3}' | xargs -I{} cp {} release_package/ 2>/dev/null || true
+          cp -r $Qt6_DIR/plugins/platforms release_package/ 2>/dev/null || true
+          cp -r $Qt6_DIR/plugins/sqldrivers release_package/ 2>/dev/null || true
+          zip -r FonctionPublique-Linux.zip release_package
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -97,7 +99,6 @@ jobs:
           files: |
             FonctionPublique-Windows.zip
             FonctionPublique-Linux.zip
-            DistributionKit/*.deb
           name: "Fonction Publique - ${{ needs.bump_version.outputs.new_tag }}"
           body: "Build automatique C++ généré via GitHub Actions pour Windows et Linux."
           draft: false
