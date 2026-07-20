@@ -122,6 +122,7 @@ jobs:
 
             ; Ajout/Suppression de programmes
             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FonctionPublique" "DisplayName" "Fonction Publique Kwilu"
+            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FonctionPublique" "Publisher" "Nartrixsoft"
             WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FonctionPublique" "UninstallString" "`$INSTDIR\uninstall.exe"
           SectionEnd
 
@@ -140,44 +141,61 @@ jobs:
         run: |
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/
+
           # Copier les bibliothèques Qt nécessaires
-          ldd build/app | grep "Qt" | awk '{print $3}' | xargs -I{} cp {} release_package/lib/ 2>/dev/null || true
+          ldd build/app | grep -E "Qt|icu" | awk '{print $3}' | xargs -I{} cp {} release_package/lib/ 2>/dev/null || true
           cp -r $Qt6_DIR/plugins/platforms release_package/plugins/ 2>/dev/null || true
           cp -r $Qt6_DIR/plugins/sqldrivers release_package/plugins/ 2>/dev/null || true
+          cp -r $Qt6_DIR/plugins/xcbglintegrations release_package/plugins/ 2>/dev/null || true
+          cp -r $Qt6_DIR/plugins/wayland-shell-integration release_package/plugins/ 2>/dev/null || true
+
+          # Script de lancement portable (résout le crash "no Qt platform plugin")
+          cat > release_package/FonctionPublique.sh << 'LAUNCH'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+          export LD_LIBRARY_PATH="$SCRIPT_DIR/lib:$LD_LIBRARY_PATH"
+          export QT_PLUGIN_PATH="$SCRIPT_DIR/plugins"
+          exec "$SCRIPT_DIR/app" "$@"
+          LAUNCH
+          sed -i 's/^          //' release_package/FonctionPublique.sh
+          chmod +x release_package/FonctionPublique.sh
+          chmod +x release_package/app
+
           zip -r FonctionPublique-Linux.zip release_package
 
           # Construction du paquet .deb
           PKG_DIR=fonctionpublique_1.0_amd64
           mkdir -p $PKG_DIR/DEBIAN
           mkdir -p $PKG_DIR/usr/local/bin
-          mkdir -p $PKG_DIR/usr/local/lib/fonctionpublique
+          mkdir -p $PKG_DIR/usr/local/lib/fonctionpublique/plugins
           mkdir -p $PKG_DIR/usr/share/applications
 
-          # Fichier de contrôle
+          # Fichier de contrôle avec Nartrixsoft
           cat > $PKG_DIR/DEBIAN/control << EOF
           Package: fonctionpublique
           Version: 1.0
           Section: admin
           Priority: optional
           Architecture: amd64
-          Maintainer: Angelo Ntoto <Angelontoto@gmail.com>
-          Description: Application de gestion de la Fonction Publique Provinciale (Kwilu)
-           Plateforme administrative pour la gestion du personnel, des ONG,
+          Maintainer: Nartrixsoft <contact@nartrixsoft.com>
+          Homepage: https://nartrixsoft.com
+          Description: Fonction Publique Kwilu - Plateforme Administrative
+           Application de gestion de la Fonction Publique Provinciale (Kwilu).
+           Développée par Nartrixsoft pour la gestion du personnel, des ONG,
            des secteurs productifs et des infrastructures.
           EOF
-          # Retirer les espaces en trop du heredoc
           sed -i 's/^          //' $PKG_DIR/DEBIAN/control
 
           # Copier les fichiers
           cp build/app $PKG_DIR/usr/local/bin/fonctionpublique
           cp release_package/lib/* $PKG_DIR/usr/local/lib/fonctionpublique/ 2>/dev/null || true
-          cp -r release_package/plugins/* $PKG_DIR/usr/local/lib/fonctionpublique/ 2>/dev/null || true
+          cp -r release_package/plugins/* $PKG_DIR/usr/local/lib/fonctionpublique/plugins/ 2>/dev/null || true
 
-          # Script de lancement qui configure le LD_LIBRARY_PATH
+          # Script de lancement
           cat > $PKG_DIR/usr/local/bin/fonctionpublique-launcher << 'LAUNCHER'
           #!/bin/bash
           export LD_LIBRARY_PATH=/usr/local/lib/fonctionpublique:$LD_LIBRARY_PATH
-          export QT_PLUGIN_PATH=/usr/local/lib/fonctionpublique
+          export QT_PLUGIN_PATH=/usr/local/lib/fonctionpublique/plugins
           exec /usr/local/bin/fonctionpublique "$@"
           LAUNCHER
           sed -i 's/^          //' $PKG_DIR/usr/local/bin/fonctionpublique-launcher
@@ -188,7 +206,7 @@ jobs:
           cat > $PKG_DIR/usr/share/applications/fonctionpublique.desktop << 'DESKTOP'
           [Desktop Entry]
           Name=Fonction Publique Kwilu
-          Comment=Gestion administrative provinciale
+          Comment=Plateforme administrative - Nartrixsoft
           Exec=fonctionpublique-launcher
           Terminal=false
           Type=Application

@@ -8,6 +8,10 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    a.setOrganizationName("Nartrixsoft");
+    a.setOrganizationDomain("nartrixsoft.com");
+    a.setApplicationName("Fonction Publique Kwilu");
+    a.setApplicationVersion("1.0.0");
 
     // Initialisation de la base de données
     if (!DatabaseManager::instance().init()) {

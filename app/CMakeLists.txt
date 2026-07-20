@@ -31,6 +31,11 @@ set(PROJECT_SOURCES
         LoginDialog.hpp
 )
 
+# Ajouter le fichier de ressources Windows (propriétés du .exe)
+if(WIN32)
+    list(APPEND PROJECT_SOURCES app.rc)
+endif()
+
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
     qt_add_executable(app
         MANUAL_FINALIZATION
