@@ -140,49 +140,41 @@ jobs:
       - name: Deploy Linux (Zip + Deb + Run)
         if: matrix.os == 'ubuntu'
         run: |
-          mkdir -p release_package/lib release_package/plugins
-          cp build/app release_package/fpub
-
           echo "=== Démarrage du packaging Linux ==="
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
           # Déduire dynamiquement la racine de Qt en regardant où ldd trouve libQt6Core.so
           QT_CORE_PATH=$(ldd build/app | grep libQt6Core.so | awk '{print $3}')
-          echo "[DEBUG] Chemin de libQt6Core.so : $QT_CORE_PATH"
-          
           QT_BASE_DIR=$(dirname $(dirname $QT_CORE_PATH))
-          echo "[DEBUG] Racine Qt déduite (QT_BASE_DIR) : $QT_BASE_DIR"
+          echo "[DEBUG] Racine Qt : $QT_BASE_DIR"
 
-          # On ajoute le répertoire lib au PATH pour résoudre les dépendances (ldd)
+          # On ajoute le répertoire lib au PATH pour résoudre les dépendances avec ldd
           export LD_LIBRARY_PATH="$QT_BASE_DIR/lib:$LD_LIBRARY_PATH"
-          echo "[DEBUG] LD_LIBRARY_PATH : $LD_LIBRARY_PATH"
 
-          # METHODE INFAILLIBLE : Copier TOUTES les libs Qt et ICU
-          echo "[DEBUG] Copie des bibliothèques Qt et ICU..."
-          cp -n $QT_BASE_DIR/lib/libQt6*.so* release_package/lib/ 2>/dev/null || true
-          cp -n $QT_BASE_DIR/lib/libicu*.so* release_package/lib/ 2>/dev/null || true
-          echo "[DEBUG] Nombre de librairies dans release_package/lib : $(ls release_package/lib | wc -l)"
-
-          # Copier les dépendances système graphiques de l'application
-          echo "[DEBUG] Scan des dépendances système (xcb, wayland, etc.)..."
-          for lib in $(ldd build/app | grep -E "xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
-            if [ -f "$lib" ]; then
-              cp -n "$lib" release_package/lib/ 2>/dev/null || true
-              echo "  -> Copié : $lib"
-            fi
+          # 1. Copier UNIQUEMENT les bibliothèques utilisées par l'exécutable
+          echo "[DEBUG] Scan des dépendances de l'application..."
+          for lib in $(ldd build/app | grep -E "Qt|icu|xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
+            [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
 
-          # Copier les plugins Qt indispensables
+          # 2. Copier les plugins Qt indispensables
           echo "[DEBUG] Copie des plugins Qt..."
           for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration wayland-graphics-integration-client imageformats; do
-            if [ -d "$QT_BASE_DIR/plugins/$plugin_dir" ]; then
-              cp -r "$QT_BASE_DIR/plugins/$plugin_dir" release_package/plugins/
-              echo "  -> Plugin copié : $plugin_dir"
-            else
-              echo "  /!\ Plugin introuvable : $QT_BASE_DIR/plugins/$plugin_dir"
-            fi
+            [ -d "$QT_BASE_DIR/plugins/$plugin_dir" ] && cp -r "$QT_BASE_DIR/plugins/$plugin_dir" release_package/plugins/
           done
+
+          # 3. Copier UNIQUEMENT les sous-dépendances requises par ces plugins
+          echo "[DEBUG] Scan des dépendances des plugins..."
+          for lib in $(find release_package/plugins -name "*.so" -exec ldd {} \; | grep -E "Qt|icu|xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
+            [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
+          done
+
+          # 4. OPTIMISATION : Supprimer les symboles de débogage pour réduire le poids de 40%
+          echo "[DEBUG] Allègement des binaires (strip)..."
+          strip release_package/fpub 2>/dev/null || true
+          find release_package/lib -name "*.so*" -exec strip --strip-unneeded {} \; 2>/dev/null || true
+          find release_package/plugins -name "*.so" -exec strip --strip-unneeded {} \; 2>/dev/null || true
           echo "=== Fin de la copie des dépendances ==="
 
           # Script de lancement portable
