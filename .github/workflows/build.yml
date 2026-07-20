@@ -217,6 +217,78 @@ jobs:
           dpkg-deb --build $PKG_DIR
           mv ${PKG_DIR}.deb FonctionPublique-Linux.deb
 
+          # Construction de l'installateur .run (auto-extractible, universel)
+          sudo apt-get install -y makeself
+
+          INSTALLER_DIR=installer_payload
+          mkdir -p $INSTALLER_DIR/app
+
+          # Copier tous les fichiers de l'application
+          cp -r release_package/* $INSTALLER_DIR/app/
+
+          # Script d'installation exécuté après extraction
+          cat > $INSTALLER_DIR/setup.sh << 'SETUP'
+          #!/bin/bash
+          echo ""
+          echo "╔══════════════════════════════════════════════════════════╗"
+          echo "║      Fonction Publique Kwilu - Installateur Linux       ║"
+          echo "║              Éditeur : Nartrixsoft                      ║"
+          echo "╚══════════════════════════════════════════════════════════╝"
+          echo ""
+
+          INSTALL_DIR="/opt/fonctionpublique"
+
+          echo "L'application sera installée dans : $INSTALL_DIR"
+          read -p "Continuer l'installation ? [O/n] " confirm
+          if [ "$confirm" = "n" ] || [ "$confirm" = "N" ]; then
+              echo "Installation annulée."
+              exit 0
+          fi
+
+          echo ""
+          echo ">> Installation en cours..."
+
+          sudo mkdir -p "$INSTALL_DIR"
+          sudo cp -r app/* "$INSTALL_DIR/"
+          sudo chmod +x "$INSTALL_DIR/app"
+          sudo chmod +x "$INSTALL_DIR/FonctionPublique.sh"
+
+          # Créer le lanceur système
+          sudo cat > /tmp/fp-launcher.sh << 'INNER'
+          #!/bin/bash
+          export LD_LIBRARY_PATH=/opt/fonctionpublique/lib:$LD_LIBRARY_PATH
+          export QT_PLUGIN_PATH=/opt/fonctionpublique/plugins
+          exec /opt/fonctionpublique/app "$@"
+          INNER
+          sudo mv /tmp/fp-launcher.sh /usr/local/bin/fonctionpublique
+          sudo chmod +x /usr/local/bin/fonctionpublique
+
+          # Raccourci dans le menu Applications
+          cat > /tmp/fonctionpublique.desktop << 'DSKTP'
+          [Desktop Entry]
+          Name=Fonction Publique Kwilu
+          Comment=Plateforme administrative - Nartrixsoft
+          Exec=fonctionpublique
+          Terminal=false
+          Type=Application
+          Categories=Office;
+          DSKTP
+          sudo mv /tmp/fonctionpublique.desktop /usr/share/applications/
+
+          echo ""
+          echo "✅ Installation terminée avec succès !"
+          echo "   Lancez l'application avec : fonctionpublique"
+          echo "   Ou depuis le menu Applications > Fonction Publique Kwilu"
+          echo ""
+          SETUP
+          sed -i 's/^          //' $INSTALLER_DIR/setup.sh
+          chmod +x $INSTALLER_DIR/setup.sh
+
+          # Générer le .run
+          makeself $INSTALLER_DIR FonctionPublique-Linux-Setup.run \
+            "Fonction Publique Kwilu - Nartrixsoft" \
+            ./setup.sh
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
@@ -224,6 +296,7 @@ jobs:
           files: |
             FonctionPublique-Setup.exe
             FonctionPublique-Windows.zip
+            FonctionPublique-Linux-Setup.run
             FonctionPublique-Linux.zip
             FonctionPublique-Linux.deb
           name: "Fonction Publique - ${{ needs.bump_version.outputs.new_tag }}"
