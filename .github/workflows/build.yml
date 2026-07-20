@@ -143,8 +143,9 @@ jobs:
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
-          # Le chemin Qt6_DIR pointe vers /lib/cmake/Qt6. On extrait la racine (ex: gcc_64)
-          QT_BASE_DIR="${Qt6_DIR%/lib/cmake/Qt6*}"
+          # Déduire dynamiquement la racine de Qt en regardant où ldd trouve libQt6Core.so
+          QT_CORE_PATH=$(ldd build/app | grep libQt6Core.so | awk '{print $3}')
+          QT_BASE_DIR=$(dirname $(dirname $QT_CORE_PATH))
 
           # On ajoute le répertoire lib au PATH pour résoudre les dépendances (ldd)
           export LD_LIBRARY_PATH="$QT_BASE_DIR/lib:$LD_LIBRARY_PATH"
