@@ -5,12 +5,12 @@ Cette TODO list détaille toutes les étapes techniques nécessaires pour finali
 ---
 
 ## 🏗️ Phase 1 : Consolidation de l'Architecture de Base
-- [ ] **Amélioration de la Base de Données (`DatabaseManager`)**
-  - [ ] Ajouter les tables secondaires pour le module Secteurs Sociaux : `Dirigeants`, `ProjetsOrganisations`, `Partenaires`, `DomainesIntervention`.
-  - [ ] Mettre en place la contrainte de clés étrangères (Foreign Keys) dans SQLite (`PRAGMA foreign_keys = ON;`).
-- [ ] **Interface et Navigation**
-  - [ ] Ajouter des icônes (`QIcon`) à côté des textes de la barre latérale.
-  - [ ] Créer une page de connexion (Login) simple avec un système de rôles (Admin, Secrétaire, Agent RH).
+- [x] **Amélioration de la Base de Données (`DatabaseManager`)**
+  - [x] Ajouter les tables secondaires pour le module Secteurs Sociaux : `Dirigeants`, `ProjetsOrganisations`, `Partenaires`, `DomainesIntervention`.
+  - [x] Mettre en place la contrainte de clés étrangères (Foreign Keys) dans SQLite (`PRAGMA foreign_keys = ON;`).
+- [x] **Interface et Navigation**
+  - [x] Ajouter des icônes (`QIcon`) à côté des textes de la barre latérale.
+  - [x] Créer une page de connexion (Login) simple avec un système de rôles (Admin, Secrétaire, Agent RH).
 
 ---
 

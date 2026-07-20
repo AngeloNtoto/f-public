@@ -157,5 +157,16 @@ bool DatabaseManager::createTables()
         success = false;
     }
 
+    // Table Users pour le système de login
+    if (!query.exec("CREATE TABLE IF NOT EXISTS Users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT UNIQUE, password TEXT, role TEXT)")) {
+        qCritical() << "Erreur Users:" << query.lastError().text();
+        success = false;
+    } else {
+        // Insérer les utilisateurs par défaut s'ils n'existent pas
+        query.exec("INSERT OR IGNORE INTO Users (username, password, role) VALUES ('admin', 'admin', 'Admin')");
+        query.exec("INSERT OR IGNORE INTO Users (username, password, role) VALUES ('secretaire', '1234', 'Secrétaire')");
+        query.exec("INSERT OR IGNORE INTO Users (username, password, role) VALUES ('agentrh', '1234', 'Agent RH')");
+    }
+
     return success;
 }

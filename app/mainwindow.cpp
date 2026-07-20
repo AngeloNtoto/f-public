@@ -23,15 +23,31 @@
 #include <QTextDocument>
 #include <QFileDialog>
 #include <QLineEdit>
+#include <QStyle>
 #include "MissionVerificationDialog.hpp"
 #include "FicheAgentDialog.hpp"
 
-MainWindow::MainWindow(QWidget *parent)
+MainWindow::MainWindow(const QString &userRole, const QString &userName, QWidget *parent)
     : QMainWindow(parent)
 {
-    setWindowTitle("Fonction Publique - Province du Kwilu");
+    setWindowTitle(QString("Fonction Publique - Province du Kwilu [%1 : %2]").arg(userRole, userName));
     resize(1024, 768);
     setupUi();
+    
+    // Application des droits d'accès
+    if (userRole == "Secrétaire") {
+        sidebar->item(1)->setHidden(true); // RH
+        sidebar->item(2)->setHidden(true); // Sociaux
+        sidebar->item(3)->setHidden(true); // Productifs
+        sidebar->item(4)->setHidden(true); // Infra
+        sidebar->setCurrentRow(5); // Focus direct sur Secrétariat
+    } else if (userRole == "Agent RH") {
+        sidebar->item(2)->setHidden(true);
+        sidebar->item(3)->setHidden(true);
+        sidebar->item(4)->setHidden(true);
+        sidebar->item(5)->setHidden(true);
+        sidebar->setCurrentRow(1); // Focus direct sur RH
+    }
 }
 
 MainWindow::~MainWindow()
@@ -56,8 +72,20 @@ void MainWindow::setupUi()
         "QListWidget::item:selected { background-color: #2980b9; }"
     );
 
-    QStringList modules = {"Tableau de Bord", "Ressources Humaines", "Secteurs Sociaux", "Secteurs Productifs", "Infrastructures", "Secrétariat"};
-    sidebar->addItems(modules);
+    struct ModuleDef { QString name; QStyle::StandardPixmap icon; };
+    QList<ModuleDef> modules = {
+        {"Tableau de Bord", QStyle::SP_ComputerIcon},
+        {"Ressources Humaines", QStyle::SP_DirIcon},
+        {"Secteurs Sociaux", QStyle::SP_FileDialogDetailedView},
+        {"Secteurs Productifs", QStyle::SP_FileDialogListView},
+        {"Infrastructures", QStyle::SP_DirHomeIcon},
+        {"Secrétariat", QStyle::SP_FileIcon}
+    };
+    
+    for (const auto &mod : modules) {
+        QListWidgetItem *item = new QListWidgetItem(style()->standardIcon(mod.icon), mod.name);
+        sidebar->addItem(item);
+    }
 
     // Stacked Widget
     stackedWidget = new QStackedWidget(this);

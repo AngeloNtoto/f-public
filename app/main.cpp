@@ -1,5 +1,6 @@
 #include "mainwindow.hpp"
 #include "DatabaseManager.hpp"
+#include "LoginDialog.hpp"
 
 #include <QApplication>
 #include <QMessageBox>
@@ -14,7 +15,12 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    MainWindow w;
-    w.show();
-    return QApplication::exec();
+    LoginDialog login;
+    if (login.exec() == QDialog::Accepted) {
+        MainWindow w(login.getUserRole(), login.getUserName());
+        w.show();
+        return QApplication::exec();
+    }
+    
+    return 0;
 }

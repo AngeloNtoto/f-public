@@ -9,6 +9,7 @@
 #include <QTableView>
 #include <QComboBox>
 #include <QDateEdit>
+#include <QLabel>
 #include <QtCharts/QChartView>
 #include <QtCharts/QBarSeries>
 #include <QtCharts/QBarSet>
@@ -20,7 +21,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(const QString &userRole = "Admin", const QString &userName = "Admin", QWidget *parent = nullptr);
     ~MainWindow() override;
 
 private slots:
