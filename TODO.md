@@ -80,5 +80,5 @@ C'est le module le plus complexe car il contient le plus de champs.
 ---
 
 ## 🚀 Déploiement et Tests
-- [ ] Mettre en place un installeur Windows/Linux avec `CQtDeployer` ou `windeployqt` pour empaqueter l'application et la base de données SQLite.
+- [x] Mettre en place un pipeline GitHub Actions avec `cqtdeployer` et `windeployqt` pour empaqueter l'application et la base de données SQLite.
 - [ ] Réaliser des tests d'impression sur une véritable imprimante pour valider les marges des PDF.
