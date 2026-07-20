@@ -40,6 +40,9 @@ bool DatabaseManager::init()
         return false;
     }
 
+    QSqlQuery pragmaQuery;
+    pragmaQuery.exec("PRAGMA foreign_keys = ON;");
+
     qDebug() << "Base de données connectée avec succès:" << dbPath;
     return createTables();
 }
@@ -100,6 +103,36 @@ bool DatabaseManager::createTables()
                     "telephone TEXT, "
                     "email TEXT)")) {
         qCritical() << "Erreur lors de la création de la table Organisations:" << query.lastError().text();
+        success = false;
+    }
+
+    // Ajout de colonnes à Organisations si non existantes
+    query.exec("ALTER TABLE Organisations ADD COLUMN representant TEXT");
+    query.exec("ALTER TABLE Organisations ADD COLUMN domaines TEXT");
+    query.exec("ALTER TABLE Organisations ADD COLUMN zones TEXT");
+    query.exec("ALTER TABLE Organisations ADD COLUMN decision TEXT");
+
+    // Table Dirigeants
+    if (!query.exec("CREATE TABLE IF NOT EXISTS Dirigeants ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    "organisation_id INTEGER, "
+                    "nom TEXT, "
+                    "fonction TEXT, "
+                    "telephone TEXT, "
+                    "FOREIGN KEY(organisation_id) REFERENCES Organisations(id))")) {
+        qCritical() << "Erreur Dirigeants:" << query.lastError().text();
+        success = false;
+    }
+
+    // Table Projets
+    if (!query.exec("CREATE TABLE IF NOT EXISTS Projets ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    "organisation_id INTEGER, "
+                    "nom TEXT, "
+                    "bailleur TEXT, "
+                    "budget TEXT, "
+                    "FOREIGN KEY(organisation_id) REFERENCES Organisations(id))")) {
+        qCritical() << "Erreur Projets:" << query.lastError().text();
         success = false;
     }
 

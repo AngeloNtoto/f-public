@@ -46,13 +46,13 @@ Ce module est le plus rapide à rendre fonctionnel grâce aux documents déjà f
 C'est le module le plus complexe car il contient le plus de champs.
 
 ### A. Fiche de Demande d'Identification (ONG/ASBL)
-- [ ] Créer une classe `IdentificationDialog`. Vu la taille du formulaire, utiliser un `QTabWidget` pour le diviser en étapes logiques :
-  - [ ] **Onglet 1 - Informations Générales :** Dénomination, Sigle, Nature Juridique, Date de création, Adresses, Infos du Représentant Légal.
-  - [ ] **Onglet 2 - Organe Dirigeant :** Un `QTableWidget` où l'utilisateur peut ajouter dynamiquement des lignes (Nom, Fonction, Téléphone).
-  - [ ] **Onglet 3 - Intervention :** Des `QGroupBox` contenant de nombreuses cases à cocher (`QCheckBox`) pour les "Domaines d'intervention" et les "Zones d'intervention" (Territoires).
-  - [ ] **Onglet 4 - Projets & Partenaires :** Tableaux dynamiques pour saisir les bailleurs, budgets, et projets en cours.
-  - [ ] **Onglet 5 - Annexes & Décision :** Cases à cocher pour les documents physiques fournis et décision finale du dossier.
-- [ ] **Logique Transactionnelle :** Lors du clic sur "Enregistrer", utiliser `QSqlDatabase::transaction()` pour s'assurer que toutes les tables (Organisation, Projets, Dirigeants) sont insérées correctement.
+- [x] Créer une classe `IdentificationDialog`. Vu la taille du formulaire, utiliser un `QTabWidget` pour le diviser en étapes logiques :
+  - [x] **Onglet 1 - Informations Générales :** Dénomination, Sigle, Nature Juridique, Date de création, Adresses, Infos du Représentant Légal.
+  - [x] **Onglet 2 - Organe Dirigeant :** Un `QTableWidget` où l'utilisateur peut ajouter dynamiquement des lignes (Nom, Fonction, Téléphone).
+  - [x] **Onglet 3 - Intervention :** Des `QGroupBox` contenant de nombreuses cases à cocher (`QCheckBox`) pour les "Domaines d'intervention" et les "Zones d'intervention" (Territoires).
+  - [x] **Onglet 4 - Projets & Partenaires :** Tableaux dynamiques pour saisir les bailleurs, budgets, et projets en cours.
+  - [x] **Onglet 5 - Annexes & Décision :** Cases à cocher pour les documents physiques fournis et décision finale du dossier.
+- [x] **Logique Transactionnelle :** Lors du clic sur "Enregistrer", utiliser `QSqlDatabase::transaction()` pour s'assurer que toutes les tables (Organisation, Projets, Dirigeants) sont insérées correctement.
 
 ### B. Rapport de Mission de Vérification
 - [ ] Créer un bouton "Ajouter Rapport de Vérification" sur la ligne d'une organisation sélectionnée.

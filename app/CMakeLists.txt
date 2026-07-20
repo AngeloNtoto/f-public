@@ -21,6 +21,8 @@ set(PROJECT_SOURCES
         DatabaseManager.hpp
         AutorisationSortieDialog.cpp
         AutorisationSortieDialog.hpp
+        IdentificationDialog.cpp
+        IdentificationDialog.hpp
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)

@@ -1,5 +1,6 @@
 #include "mainwindow.hpp"
 #include "AutorisationSortieDialog.hpp"
+#include "IdentificationDialog.hpp"
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QLabel>
@@ -169,6 +170,12 @@ QWidget* MainWindow::createSecteursSociauxPage()
     
     QPushButton *btnNewIdent = new QPushButton("Nouvelle Demande d'Identification", page);
     btnNewIdent->setStyleSheet("padding: 10px; background-color: #f39c12; color: white; border-radius: 4px;");
+    
+    connect(btnNewIdent, &QPushButton::clicked, this, [this]() {
+        IdentificationDialog dialog(this);
+        dialog.exec();
+    });
+    
     layout->addWidget(btnNewIdent);
     layout->addStretch();
     return page;
