@@ -91,19 +91,143 @@ void MainWindow::setupUi()
 void MainWindow::changePage(int index)
 {
     stackedWidget->setCurrentIndex(index);
+    if (index == 0) {
+        refreshDashboard();
+    }
 }
+
+#include <QtCharts/QBarCategoryAxis>
+#include <QtCharts/QValueAxis>
 
 QWidget* MainWindow::createDashboardPage()
 {
     QWidget *page = new QWidget();
     QVBoxLayout *layout = new QVBoxLayout(page);
     layout->setContentsMargins(20, 20, 20, 20);
+    layout->setSpacing(20);
     
-    QLabel *title = new QLabel("<h2>Tableau de Bord Global</h2>", page);
-    layout->addWidget(title);
-    layout->addWidget(new QLabel("Bienvenue dans le système de gestion de la Fonction Publique du Kwilu.", page));
-    layout->addStretch();
+    layout->addWidget(new QLabel("<h2>Tableau de Bord</h2>", page));
+    
+    // KPIs
+    QHBoxLayout *kpiLayout = new QHBoxLayout();
+    
+    QFrame *kpiFrame1 = new QFrame();
+    kpiFrame1->setFrameStyle(QFrame::StyledPanel);
+    kpiFrame1->setStyleSheet("background-color: #2980b9; color: white; border-radius: 8px; padding: 10px;");
+    QVBoxLayout *kL1 = new QVBoxLayout(kpiFrame1);
+    lblTotalAgents = new QLabel("<h3>0</h3>");
+    kL1->addWidget(new QLabel("<b>Total Agents</b>"));
+    kL1->addWidget(lblTotalAgents);
+    
+    QFrame *kpiFrame2 = new QFrame();
+    kpiFrame2->setFrameStyle(QFrame::StyledPanel);
+    kpiFrame2->setStyleSheet("background-color: #27ae60; color: white; border-radius: 8px; padding: 10px;");
+    QVBoxLayout *kL2 = new QVBoxLayout(kpiFrame2);
+    lblPresenceRate = new QLabel("<h3>0 %</h3>");
+    kL2->addWidget(new QLabel("<b>Taux de Présence (Aujourd'hui)</b>"));
+    kL2->addWidget(lblPresenceRate);
+    
+    kpiLayout->addWidget(kpiFrame1);
+    kpiLayout->addWidget(kpiFrame2);
+    layout->addLayout(kpiLayout);
+    
+    // Graphiques
+    QHBoxLayout *chartsLayout = new QHBoxLayout();
+    
+    // Bar Chart
+    barChart = new QChart();
+    barChart->setTitle("Autorisations de sortie (Mois)");
+    barChart->setAnimationOptions(QChart::SeriesAnimations);
+    QChartView *barChartView = new QChartView(barChart);
+    barChartView->setRenderHint(QPainter::Antialiasing);
+    
+    // Pie Chart
+    pieChart = new QChart();
+    pieChart->setTitle("Répartition des Organisations (ONG/ASBL)");
+    pieChart->setAnimationOptions(QChart::SeriesAnimations);
+    QChartView *pieChartView = new QChartView(pieChart);
+    pieChartView->setRenderHint(QPainter::Antialiasing);
+    
+    chartsLayout->addWidget(barChartView);
+    chartsLayout->addWidget(pieChartView);
+    
+    layout->addLayout(chartsLayout);
+    
+    refreshDashboard();
+    
     return page;
+}
+
+void MainWindow::refreshDashboard()
+{
+    // KPI 1: Total Agents
+    QSqlQuery q;
+    q.exec("SELECT COUNT(*) FROM Agents");
+    int totalAgents = 0;
+    if (q.next()) totalAgents = q.value(0).toInt();
+    lblTotalAgents->setText(QString("<h3>%1</h3>").arg(totalAgents));
+    
+    // KPI 2: Présences
+    q.prepare("SELECT COUNT(*) FROM Presences WHERE date = ?");
+    q.addBindValue(QDate::currentDate().toString("dd/MM/yyyy"));
+    q.exec();
+    int presents = 0;
+    if (q.next()) presents = q.value(0).toInt();
+    
+    int rate = totalAgents > 0 ? (presents * 100) / totalAgents : 0;
+    lblPresenceRate->setText(QString("<h3>%1 % (%2 présents)</h3>").arg(rate).arg(presents));
+    
+    // Pie Chart: Organisations
+    pieChart->removeAllSeries();
+    QPieSeries *pieSeries = new QPieSeries();
+    q.exec("SELECT nature_juridique, COUNT(*) FROM Organisations GROUP BY nature_juridique");
+    while (q.next()) {
+        QString nature = q.value(0).toString();
+        int count = q.value(1).toInt();
+        if(nature.isEmpty()) nature = "Autre";
+        pieSeries->append(nature + QString(" (%1)").arg(count), count);
+    }
+    pieChart->addSeries(pieSeries);
+    
+    // Bar Chart: Autorisations par mois
+    barChart->removeAllSeries();
+    QBarSeries *barSeries = new QBarSeries();
+    QBarSet *set0 = new QBarSet("Autorisations");
+    
+    QMap<QString, int> authParMois;
+    q.exec("SELECT date_sortie FROM AutorisationSortie");
+    while(q.next()) {
+        QString d = q.value(0).toString();
+        if(d.length() >= 10) {
+            QString mois = d.mid(3, 7); // MM/yyyy
+            authParMois[mois]++;
+        }
+    }
+    
+    QStringList categories;
+    for(auto it = authParMois.begin(); it != authParMois.end(); ++it) {
+        categories << it.key();
+        *set0 << it.value();
+    }
+    
+    if (categories.isEmpty()) {
+        categories << "Aucune";
+        *set0 << 0;
+    }
+    
+    barSeries->append(set0);
+    barChart->addSeries(barSeries);
+    
+    for(auto axis : barChart->axes()) barChart->removeAxis(axis);
+    
+    QBarCategoryAxis *axisX = new QBarCategoryAxis();
+    axisX->append(categories);
+    barChart->addAxis(axisX, Qt::AlignBottom);
+    barSeries->attachAxis(axisX);
+    
+    QValueAxis *axisY = new QValueAxis();
+    barChart->addAxis(axisY, Qt::AlignLeft);
+    barSeries->attachAxis(axisY);
 }
 
 QWidget* MainWindow::createRhPage()
