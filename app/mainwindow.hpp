@@ -5,7 +5,10 @@
 #include <QStackedWidget>
 #include <QListWidget>
 #include <QSqlTableModel>
+#include <QSqlRelationalTableModel>
 #include <QTableView>
+#include <QComboBox>
+#include <QDateEdit>
 
 class MainWindow : public QMainWindow
 {
@@ -30,6 +33,15 @@ private:
     
     // Modèles de données
     QSqlTableModel *agentModel;
+    QSqlRelationalTableModel *presencesModel;
+
+    // UI Présences
+    QComboBox *agentPresenceCombo;
+    QDateEdit *datePresenceEdit;
+
+    void loadPresenceAgents();
+    void pointerArrivee();
+    void pointerDepart();
 };
 
 #endif // MAINWINDOW_HPP

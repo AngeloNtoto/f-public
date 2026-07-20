@@ -32,13 +32,13 @@ Ce module est le plus rapide à rendre fonctionnel grâce aux documents déjà f
   - [x] Utiliser `QPrinter` pour exporter en PDF ou lancer l'impression directe.
 
 ### B. Gestion des Présences
-- [ ] Ajouter une vue (Tab) dédiée dans la page Secrétariat.
-- [ ] Afficher un `QTableView` lié à la table `Presences`.
-- [ ] **Formulaire de pointage rapide :**
-  - [ ] Sélecteur de date (`QDateEdit`) défini sur la date du jour par défaut.
-  - [ ] Sélecteur d'agent.
-  - [ ] Bouton "Pointer Arrivée" (enregistre l'heure actuelle).
-  - [ ] Bouton "Pointer Départ" (met à jour la ligne d'arrivée avec l'heure de départ).
+- [x] Ajouter une vue (Tab) dédiée dans la page Secrétariat.
+- [x] Afficher un `QTableView` lié à la table `Presences`.
+- [x] **Formulaire de pointage rapide :**
+  - [x] Sélecteur de date (`QDateEdit`) défini sur la date du jour par défaut.
+  - [x] Sélecteur d'agent.
+  - [x] Bouton "Pointer Arrivée" (enregistre l'heure actuelle).
+  - [x] Bouton "Pointer Départ" (met à jour la ligne d'arrivée avec l'heure de départ).
 
 ---
 
