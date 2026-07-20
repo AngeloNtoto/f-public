@@ -44,7 +44,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.6.0'
+          version: '6.7.2'
           host: ${{ matrix.os == 'windows' && 'windows' || 'linux' }}
           target: 'desktop'
           arch: ${{ matrix.os == 'windows' && 'win64_msvc2019_64' || 'gcc_64' }}
@@ -86,7 +86,7 @@ jobs:
           # Installation de CQtDeployer via snap (supporté nativement sur les runners ubuntu)
           sudo snap install cqtdeployer
           # Empaquetage du binaire et génération du .deb
-          cqtdeployer -bin build/app -qmake $(which qmake) -clear -deb
+          cqtdeployer -bin build/app -qmake $(which qmake) -deb
           # Compression du dossier autonome pour ceux qui ne veulent pas le .deb
           zip -r FonctionPublique-Linux.zip DistributionKit
 
