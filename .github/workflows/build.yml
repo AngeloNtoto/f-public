@@ -143,21 +143,24 @@ jobs:
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
-          # On ajoute Qt6_DIR/lib au path
-          export LD_LIBRARY_PATH="$Qt6_DIR/lib:$LD_LIBRARY_PATH"
+          # Le chemin Qt6_DIR pointe vers /lib/cmake/Qt6. On extrait la racine (ex: gcc_64)
+          QT_BASE_DIR="${Qt6_DIR%/lib/cmake/Qt6*}"
 
-          # METHODE INFAILLIBLE : On copie simplement toutes les libs Qt et ICU fournies par l'installation
-          cp -n $Qt6_DIR/lib/libQt6*.so* release_package/lib/ 2>/dev/null || true
-          cp -n $Qt6_DIR/lib/libicu*.so* release_package/lib/ 2>/dev/null || true
+          # On ajoute le répertoire lib au PATH pour résoudre les dépendances (ldd)
+          export LD_LIBRARY_PATH="$QT_BASE_DIR/lib:$LD_LIBRARY_PATH"
 
-          # On copie également les dépendances système critiques (xcb, wayland, xkb) liées à notre exécutable
+          # METHODE INFAILLIBLE : Copier TOUTES les libs Qt et ICU
+          cp -n $QT_BASE_DIR/lib/libQt6*.so* release_package/lib/ 2>/dev/null || true
+          cp -n $QT_BASE_DIR/lib/libicu*.so* release_package/lib/ 2>/dev/null || true
+
+          # Copier les dépendances système graphiques de l'application
           for lib in $(ldd build/app | grep -E "xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
             [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
 
-          # Copier les plugins Qt (indispensable pour le démarrage)
-          for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration imageformats; do
-            [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
+          # Copier les plugins Qt indispensables
+          for plugin_dir in platforms sqldrivers xcbglintegrations wayland-shell-integration wayland-graphics-integration-client imageformats; do
+            [ -d "$QT_BASE_DIR/plugins/$plugin_dir" ] && cp -r "$QT_BASE_DIR/plugins/$plugin_dir" release_package/plugins/
           done
 
           # Script de lancement portable
@@ -238,7 +241,7 @@ jobs:
           echo ""
           echo "╔══════════════════════════════════════════════════════════╗"
           echo "║      Fonction Publique Kwilu - Installateur Linux       ║"
-          echo "║              Éditeur : Nartrixsoft                      ║"
+          echo "║              Éditeur : Nartrixsoft1                      ║"
           echo "╚══════════════════════════════════════════════════════════╝"
           echo ""
 
