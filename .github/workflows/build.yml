@@ -81,6 +81,60 @@ jobs:
           windeployqt release_package/app.exe
           Compress-Archive -Path release_package\* -DestinationPath FonctionPublique-Windows.zip
 
+      - name: Create Windows Installer (NSIS)
+        if: matrix.os == 'windows'
+        run: |
+          @"
+          !include "MUI2.nsh"
+
+          Name "Fonction Publique Kwilu"
+          OutFile "FonctionPublique-Setup.exe"
+          InstallDir "`$PROGRAMFILES\Fonction Publique Kwilu"
+          RequestExecutionLevel admin
+
+          !define MUI_ABORTWARNING
+          !define MUI_ICON "`${NSISDIR}\Contrib\Graphics\Icons\modern-install.ico"
+
+          !insertmacro MUI_PAGE_WELCOME
+          !insertmacro MUI_PAGE_DIRECTORY
+          !insertmacro MUI_PAGE_INSTFILES
+          !insertmacro MUI_PAGE_FINISH
+
+          !insertmacro MUI_UNPAGE_CONFIRM
+          !insertmacro MUI_UNPAGE_INSTFILES
+
+          !insertmacro MUI_LANGUAGE "French"
+
+          Section "Install"
+            SetOutPath "`$INSTDIR"
+            File /r "release_package\*.*"
+
+            ; Raccourci Bureau
+            CreateShortcut "`$DESKTOP\Fonction Publique Kwilu.lnk" "`$INSTDIR\app.exe"
+
+            ; Raccourci Menu Démarrer
+            CreateDirectory "`$SMPROGRAMS\Fonction Publique Kwilu"
+            CreateShortcut "`$SMPROGRAMS\Fonction Publique Kwilu\Fonction Publique.lnk" "`$INSTDIR\app.exe"
+            CreateShortcut "`$SMPROGRAMS\Fonction Publique Kwilu\Désinstaller.lnk" "`$INSTDIR\uninstall.exe"
+
+            ; Désinstalleur
+            WriteUninstaller "`$INSTDIR\uninstall.exe"
+
+            ; Ajout/Suppression de programmes
+            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FonctionPublique" "DisplayName" "Fonction Publique Kwilu"
+            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FonctionPublique" "UninstallString" "`$INSTDIR\uninstall.exe"
+          SectionEnd
+
+          Section "Uninstall"
+            RMDir /r "`$INSTDIR"
+            Delete "`$DESKTOP\Fonction Publique Kwilu.lnk"
+            RMDir /r "`$SMPROGRAMS\Fonction Publique Kwilu"
+            DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FonctionPublique"
+          SectionEnd
+          "@ | Out-File -FilePath installer.nsi -Encoding UTF8
+
+          makensis installer.nsi
+
       - name: Deploy Linux (Zip + Deb)
         if: matrix.os == 'ubuntu'
         run: |
@@ -150,6 +204,7 @@ jobs:
         with:
           tag_name: ${{ needs.bump_version.outputs.new_tag }}
           files: |
+            FonctionPublique-Setup.exe
             FonctionPublique-Windows.zip
             FonctionPublique-Linux.zip
             FonctionPublique-Linux.deb
