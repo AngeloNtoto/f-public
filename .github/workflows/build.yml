@@ -143,9 +143,12 @@ jobs:
           mkdir -p release_package/lib release_package/plugins
           cp build/app release_package/fpub
 
+          # On ajoute Qt6_DIR/lib au path pour que ldd puisse résoudre les dépendances des plugins
+          export LD_LIBRARY_PATH="$Qt6_DIR/lib:$LD_LIBRARY_PATH"
+
           # Copier TOUTES les bibliothèques Qt et dépendances nécessaires pour l'exécutable
-          for lib in $(ldd build/app | grep -E "Qt|icu|libxcb|libxkb|libGL" | awk '{print $3}'); do
-            [ -f "$lib" ] && cp "$lib" release_package/lib/
+          for lib in $(ldd build/app | grep -E "Qt|icu|xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
+            [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
 
           # Copier les plugins Qt (indispensable pour le démarrage)
@@ -153,8 +156,8 @@ jobs:
             [ -d "$Qt6_DIR/plugins/$plugin_dir" ] && cp -r "$Qt6_DIR/plugins/$plugin_dir" release_package/plugins/
           done
 
-          # Scanner les plugins copiés pour inclure LEURS dépendances (wayland, xcb, etc.)
-          for lib in $(find release_package/plugins -name "*.so" -exec ldd {} \; | grep -E "Qt|icu|libxcb|libxkb|libGL|wayland|ffi" | awk '{print $3}'); do
+          # Scanner les plugins pour copier LEURS sous-dépendances
+          for lib in $(find release_package/plugins -name "*.so" -exec ldd {} \; | grep -E "Qt|icu|xcb|xkb|GL|wayland|ffi|EGL|GLES|dbus" | awk '{print $3}'); do
             [ -f "$lib" ] && cp -n "$lib" release_package/lib/ 2>/dev/null || true
           done
 
