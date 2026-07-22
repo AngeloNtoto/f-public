@@ -117,6 +117,19 @@ void AutorisationSortieDialog::saveAndGeneratePdf()
 
     int autorisationId = query.lastInsertId().toInt();
     
+    // --- LIAISON SECRÉTARIAT -> RH ---
+    // Enregistrer automatiquement cette autorisation comme une "Absence Autorisée" dans la table des Congés
+    QSqlQuery qConge;
+    qConge.prepare("INSERT INTO Conges (agent_id, type_conge, date_debut, date_fin, duree_jours, mois_annee, motif) VALUES (?, ?, ?, ?, ?, ?, ?)");
+    qConge.addBindValue(agentId);
+    qConge.addBindValue("Absence Autorisée");
+    qConge.addBindValue(dateDepartEdit->date().toString("dd/MM/yyyy"));
+    qConge.addBindValue(dateRetourEdit->date().toString("dd/MM/yyyy"));
+    qConge.addBindValue(duree);
+    qConge.addBindValue(dateDepartEdit->date().toString("MM/yyyy"));
+    qConge.addBindValue("Autorisation de sortie vers " + destinationEdit->text() + " - " + motifEdit->text());
+    qConge.exec();
+    
     generatePdf(autorisationId);
     accept();
 }

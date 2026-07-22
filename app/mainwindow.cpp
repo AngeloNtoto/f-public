@@ -31,6 +31,7 @@
 #include <QApplication>
 #include "MissionVerificationDialog.hpp"
 #include "FicheAgentDialog.hpp"
+#include <QRandomGenerator>
 
 MainWindow::MainWindow(const QString &userRole, const QString &userName, QWidget *parent)
     : QMainWindow(parent)
@@ -129,7 +130,16 @@ QWidget* MainWindow::createDashboardPage()
     layout->setContentsMargins(20, 20, 20, 20);
     layout->setSpacing(20);
     
-    layout->addWidget(new QLabel("<h2>Tableau de Bord</h2>", page));
+    QHBoxLayout *topDashLayout = new QHBoxLayout();
+    topDashLayout->addWidget(new QLabel("<h2>Tableau de Bord</h2>", page));
+    topDashLayout->addStretch();
+    
+    QPushButton *btnMock = new QPushButton("Générer Données Mocks (Développement)", page);
+    btnMock->setStyleSheet("padding: 8px 16px; background-color: #d35400; color: white; border-radius: 4px; font-weight: bold;");
+    topDashLayout->addWidget(btnMock);
+    connect(btnMock, &QPushButton::clicked, this, &MainWindow::generateMockData);
+    
+    layout->addLayout(topDashLayout);
     
     // KPIs
     QHBoxLayout *kpiLayout = new QHBoxLayout();
@@ -258,109 +268,275 @@ QWidget* MainWindow::createRhPage()
     QWidget *page = new QWidget();
     QVBoxLayout *layout = new QVBoxLayout(page);
     layout->setContentsMargins(20, 20, 20, 20);
+    layout->setSpacing(12);
     
-    QLabel *title = new QLabel("<h2>Ressources Humaines - Liste des Agents</h2>", page);
+    QLabel *title = new QLabel("<h2>Ressources Humaines - Liste & Gestion des Agents</h2>", page);
     layout->addWidget(title);
-
-    // Barre de recherche
-    QHBoxLayout *searchLayout = new QHBoxLayout();
-    QLineEdit *searchEdit = new QLineEdit();
-    searchEdit->setPlaceholderText("Rechercher un agent par nom ou matricule...");
-    searchLayout->addWidget(new QLabel("Recherche :"));
-    searchLayout->addWidget(searchEdit);
-    layout->addLayout(searchLayout);
 
     // Initialisation du modèle SQL
     agentModel = new QSqlTableModel(this);
     agentModel->setTable("Agents");
     agentModel->select();
-    
-    // Personnalisation des en-têtes
-    agentModel->setHeaderData(0, Qt::Horizontal, "ID");
-    agentModel->setHeaderData(1, Qt::Horizontal, "Matricule");
-    agentModel->setHeaderData(2, Qt::Horizontal, "Nom");
-    agentModel->setHeaderData(3, Qt::Horizontal, "Post-nom");
-    agentModel->setHeaderData(4, Qt::Horizontal, "Grade");
-    agentModel->setHeaderData(5, Qt::Horizontal, "Fonction");
-    agentModel->setHeaderData(6, Qt::Horizontal, "Service");
-    agentModel->setHeaderData(7, Qt::Horizontal, "Ministère");
-    agentModel->setHeaderData(8, Qt::Horizontal, "Direction");
-    agentModel->setHeaderData(9, Qt::Horizontal, "Date d'engagement");
-    agentModel->setHeaderData(10, Qt::Horizontal, "Salaire de base");
-    agentModel->setHeaderData(11, Qt::Horizontal, "Prénom");
-    agentModel->setHeaderData(12, Qt::Horizontal, "Sexe");
-    agentModel->setHeaderData(13, Qt::Horizontal, "État Civil");
-    agentModel->setHeaderData(14, Qt::Horizontal, "Téléphone");
-    agentModel->setHeaderData(15, Qt::Horizontal, "Adresse");
-    agentModel->setHeaderData(16, Qt::Horizontal, "Primes");
 
-    QTableView *tableView = new QTableView(page);
-    tableView->setModel(agentModel);
-    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-    tableView->setEditTriggers(QAbstractItemView::NoEditTriggers); // Pas d'édition directe
-    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    
-    layout->addWidget(tableView);
-    
-    // Filtrage dynamique
-    connect(searchEdit, &QLineEdit::textChanged, [this](const QString &text) {
-        if(text.isEmpty()) {
-            agentModel->setFilter("");
-        } else {
-            agentModel->setFilter(QString("nom LIKE '%%1%' OR matricule LIKE '%%1%'").arg(text));
+    // Initialisation du Proxy de Tri/Filtrage Avancé
+    agentProxyModel = new AgentFilterProxyModel(this);
+    agentProxyModel->setSourceModel(agentModel);
+    agentProxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+
+    // En-têtes du modèle SQL par nom de champ
+    QMap<QString, QString> headers = {
+        {"id", "ID"},
+        {"matricule", "Matricule"},
+        {"nom", "Nom"},
+        {"postnom", "Post-nom"},
+        {"prenom", "Prénom"},
+        {"sexe", "Sexe"},
+        {"etat_civil", "État Civil"},
+        {"date_naissance", "Date de Naissance"},
+        {"telephone", "Téléphone"},
+        {"email", "Email"},
+        {"adresse", "Adresse"},
+        {"ministere", "Ministère"},
+        {"secretariat_general", "Secrétariat Général"},
+        {"direction", "Direction"},
+        {"division", "Division"},
+        {"bureau", "Bureau"},
+        {"service", "Service"},
+        {"niveau_affectation", "Niveau Affectation"},
+        {"province", "Province"},
+        {"lieu_affectation", "Lieu Affectation"},
+        {"grade", "Grade"},
+        {"fonction", "Fonction"},
+        {"domaine", "Domaine"},
+        {"date_engagement", "Date Engagement"},
+        {"position_admin", "Position Admin"},
+        {"statut_recensement", "Statut Recensement"},
+        {"ref_engagement", "Réf. Engagement"},
+        {"ref_nomination", "Réf. Nomination"},
+        {"ref_commissionnement", "Réf. Commissionnement"},
+        {"niveau_etude", "Niveau Étude"},
+        {"filiere", "Filière"},
+        {"salaire", "Salaire ($)"},
+        {"primes", "Primes ($)"}
+    };
+
+    for (auto it = headers.begin(); it != headers.end(); ++it) {
+        int idx = agentModel->fieldIndex(it.key());
+        if (idx != -1) {
+            agentModel->setHeaderData(idx, Qt::Horizontal, it.value());
         }
-        agentModel->select();
+    }
+
+    // ==========================================
+    // BARRE DE FILTRAGE & RECHERCHE AVANCÉE (PRO)
+    // ==========================================
+    QFrame *filterFrame = new QFrame(page);
+    filterFrame->setStyleSheet("QFrame { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; }");
+    QVBoxLayout *filterFrameLayout = new QVBoxLayout(filterFrame);
+    filterFrameLayout->setSpacing(8);
+
+    // Ligne 1 : Recherche Texte & Cible de colonne
+    QHBoxLayout *searchRow = new QHBoxLayout();
+    
+    QLineEdit *searchEdit = new QLineEdit(filterFrame);
+    searchEdit->setPlaceholderText("Filtrer les agents...");
+    searchEdit->setClearButtonEnabled(true);
+    searchEdit->setStyleSheet("padding: 6px 12px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px;");
+
+    QComboBox *targetColCombo = new QComboBox(filterFrame);
+    targetColCombo->addItem("Tous les champs", -1);
+    for (int i = 0; i < agentModel->columnCount(); ++i) {
+        QString headerText = agentModel->headerData(i, Qt::Horizontal).toString();
+        if (!headerText.isEmpty()) {
+            targetColCombo->addItem("Champ : " + headerText, i);
+        }
+    }
+    targetColCombo->setStyleSheet("padding: 6px; border: 1px solid #cbd5e1; border-radius: 4px;");
+
+    searchRow->addWidget(new QLabel("<b>Recherche :</b>"));
+    searchRow->addWidget(searchEdit, 1);
+    searchRow->addWidget(new QLabel("<b>Cible :</b>"));
+    searchRow->addWidget(targetColCombo);
+
+    // Ligne 2 : Filtres combinés (Ministère, Sexe, Recensement) + Reset
+    QHBoxLayout *combosRow = new QHBoxLayout();
+
+    QComboBox *filterMinistereCombo = new QComboBox(filterFrame);
+    filterMinistereCombo->addItem("Tous les Ministères");
+    QSqlQuery qMin("SELECT DISTINCT valeur FROM RefOptions WHERE categorie='ministere' UNION SELECT DISTINCT ministere FROM Agents WHERE ministere IS NOT NULL AND ministere != '' ORDER BY valeur ASC");
+    while(qMin.next()) filterMinistereCombo->addItem(qMin.value(0).toString());
+
+    QComboBox *filterSexeCombo = new QComboBox(filterFrame);
+    filterSexeCombo->addItems({"Tous les sexes", "Féminin", "Masculin"});
+
+    QComboBox *filterRecensementCombo = new QComboBox(filterFrame);
+    filterRecensementCombo->addItems({"Tous les statuts", "Oui", "Non"});
+
+    QPushButton *btnResetFilters = new QPushButton(style()->standardIcon(QStyle::SP_BrowserReload), "Réinitialiser", filterFrame);
+    btnResetFilters->setCursor(Qt::PointingHandCursor);
+    btnResetFilters->setStyleSheet("padding: 6px 12px; background: #64748b; color: white; border-radius: 4px; font-weight: bold;");
+
+    combosRow->addWidget(new QLabel("Ministère :"));
+    combosRow->addWidget(filterMinistereCombo);
+    combosRow->addWidget(new QLabel("Sexe :"));
+    combosRow->addWidget(filterSexeCombo);
+    combosRow->addWidget(new QLabel("Recensé :"));
+    combosRow->addWidget(filterRecensementCombo);
+    combosRow->addStretch();
+    combosRow->addWidget(btnResetFilters);
+
+    filterFrameLayout->addLayout(searchRow);
+    filterFrameLayout->addLayout(combosRow);
+
+    layout->addWidget(filterFrame);
+
+    // Compteur dynamique d'agents
+    QLabel *lblCounter = new QLabel(page);
+    lblCounter->setStyleSheet("color: #475569; font-weight: bold; font-size: 13px; margin-top: 4px;");
+
+    auto updateCounter = [this, lblCounter]() {
+        int count = agentProxyModel->rowCount();
+        int total = agentModel->rowCount();
+        lblCounter->setText(QString("Agents affichés : <b>%1</b> / %2").arg(count).arg(total));
+    };
+
+    // Connexions du Proxy
+    connect(searchEdit, &QLineEdit::textChanged, [this, updateCounter](const QString &text) {
+        agentProxyModel->setFilterRegularExpression(QRegularExpression(QRegularExpression::escape(text), QRegularExpression::CaseInsensitiveOption));
+        updateCounter();
     });
 
-    // Ouverture par double clic
-    connect(tableView, &QTableView::doubleClicked, [this, tableView](const QModelIndex &index) {
-        int row = index.row();
+    connect(targetColCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), [this, targetColCombo, updateCounter](int) {
+        int col = targetColCombo->currentData().toInt();
+        agentProxyModel->setTargetColumn(col);
+        updateCounter();
+    });
+
+    connect(filterMinistereCombo, &QComboBox::currentTextChanged, [this, updateCounter](const QString &min) {
+        agentProxyModel->setFilterMinistere(min);
+        updateCounter();
+    });
+
+    connect(filterSexeCombo, &QComboBox::currentTextChanged, [this, updateCounter](const QString &sexe) {
+        agentProxyModel->setFilterSexe(sexe);
+        updateCounter();
+    });
+
+    connect(filterRecensementCombo, &QComboBox::currentTextChanged, [this, updateCounter](const QString &rec) {
+        agentProxyModel->setFilterRecensement(rec);
+        updateCounter();
+    });
+
+    connect(btnResetFilters, &QPushButton::clicked, [this, searchEdit, targetColCombo, filterMinistereCombo, filterSexeCombo, filterRecensementCombo, updateCounter]() {
+        searchEdit->clear();
+        targetColCombo->setCurrentIndex(0);
+        filterMinistereCombo->setCurrentIndex(0);
+        filterSexeCombo->setCurrentIndex(0);
+        filterRecensementCombo->setCurrentIndex(0);
+        agentProxyModel->resetAllFilters();
+        updateCounter();
+    });
+
+    // ==========================================
+    // TABLE VIEW AVEC TRI INTERACTIF SUR TOUTES LES COLONNES
+    // ==========================================
+    QTableView *tableView = new QTableView(page);
+    tableView->setModel(agentProxyModel); // Proxy activé !
+    tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    tableView->setSortingEnabled(true); // Tri interactif par clic sur en-tête !
+    tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    tableView->horizontalHeader()->setSortIndicatorShown(true);
+    tableView->sortByColumn(2, Qt::AscendingOrder); // Tri par défaut sur la colonne Nom
+
+    layout->addWidget(lblCounter);
+    layout->addWidget(tableView);
+
+    updateCounter();
+
+    // Connexion du double-clic sur l'en-tête de colonne pour ouvrir le menu filtrage & tri de la colonne (Style Excel)
+    connect(tableView->horizontalHeader(), &QHeaderView::sectionDoubleClicked, [this, tableView, updateCounter](int logicalIndex) {
+        QString colName = agentModel->headerData(logicalIndex, Qt::Horizontal).toString();
+        QStringList activeFilters = agentProxyModel->columnFilterValues(logicalIndex);
+
+        ColumnFilterDialog dlg(logicalIndex, colName, agentModel, activeFilters, this);
+        if (dlg.exec() == QDialog::Accepted) {
+            if (dlg.clearFilterRequested()) {
+                agentProxyModel->clearColumnFilter(logicalIndex);
+            } else {
+                if (dlg.sortOrder() == 1) {
+                    tableView->sortByColumn(logicalIndex, Qt::AscendingOrder);
+                } else if (dlg.sortOrder() == 2) {
+                    tableView->sortByColumn(logicalIndex, Qt::DescendingOrder);
+                }
+                agentProxyModel->setColumnValueFilter(logicalIndex, dlg.selectedValues());
+            }
+            updateCounter();
+        }
+    });
+
+    // Ouverture par double clic avec mapping Proxy -> Source
+    connect(tableView, &QTableView::doubleClicked, [this, tableView, updateCounter](const QModelIndex &proxyIndex) {
+        QModelIndex sourceIndex = agentProxyModel->mapToSource(proxyIndex);
+        int row = sourceIndex.row();
         int agentId = agentModel->record(row).value("id").toInt();
         FicheAgentDialog dialog(agentId, this);
         if(dialog.exec() == QDialog::Accepted) {
             agentModel->select();
+            updateCounter();
         }
     });
 
-    // Boutons d'action
+    // Boutons d'action principaux
     QHBoxLayout *btnLayout = new QHBoxLayout();
-    QPushButton *btnAdd = new QPushButton("Nouveau Dossier Agent", page);
-    QPushButton *btnEdit = new QPushButton("Voir/Éditer Fiche", page);
-    QPushButton *btnDelete = new QPushButton("Supprimer l'agent", page);
+    QPushButton *btnAdd = new QPushButton(style()->standardIcon(QStyle::SP_FileDialogNewFolder), "Nouveau Dossier Agent", page);
+    QPushButton *btnEdit = new QPushButton(style()->standardIcon(QStyle::SP_FileDialogDetailedView), "Voir/Éditer Fiche", page);
+    QPushButton *btnDelete = new QPushButton(style()->standardIcon(QStyle::SP_TrashIcon), "Supprimer l'agent", page);
     
-    btnAdd->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px;");
-    btnEdit->setStyleSheet("padding: 8px; background-color: #f39c12; color: white; border-radius: 4px;");
-    btnDelete->setStyleSheet("padding: 8px; background-color: #e74c3c; color: white; border-radius: 4px;");
+    btnAdd->setStyleSheet("padding: 8px 16px; background-color: #27ae60; color: white; border-radius: 4px; font-weight: bold;");
+    btnEdit->setStyleSheet("padding: 8px 16px; background-color: #f39c12; color: white; border-radius: 4px; font-weight: bold;");
+    btnDelete->setStyleSheet("padding: 8px 16px; background-color: #e74c3c; color: white; border-radius: 4px; font-weight: bold;");
     
-    connect(btnAdd, &QPushButton::clicked, [this]() {
+    connect(btnAdd, &QPushButton::clicked, [this, updateCounter]() {
         FicheAgentDialog dialog(this);
         if(dialog.exec() == QDialog::Accepted) {
             agentModel->select();
             loadPresenceAgents();
+            updateCounter();
         }
     });
     
-    connect(btnEdit, &QPushButton::clicked, [this, tableView]() {
-        int row = tableView->currentIndex().row();
-        if(row >= 0) {
+    connect(btnEdit, &QPushButton::clicked, [this, tableView, updateCounter]() {
+        QModelIndex proxyIndex = tableView->currentIndex();
+        if(proxyIndex.isValid()) {
+            QModelIndex sourceIndex = agentProxyModel->mapToSource(proxyIndex);
+            int row = sourceIndex.row();
             int agentId = agentModel->record(row).value("id").toInt();
             FicheAgentDialog dialog(agentId, this);
             if(dialog.exec() == QDialog::Accepted) {
                 agentModel->select();
+                updateCounter();
             }
+        } else {
+            QMessageBox::warning(this, "Attention", "Veuillez sélectionner un agent dans la liste.");
         }
     });
 
-    connect(btnDelete, &QPushButton::clicked, [this, tableView]() {
-        int row = tableView->currentIndex().row();
-        if(row >= 0) {
+    connect(btnDelete, &QPushButton::clicked, [this, tableView, updateCounter]() {
+        QModelIndex proxyIndex = tableView->currentIndex();
+        if(proxyIndex.isValid()) {
+            QModelIndex sourceIndex = agentProxyModel->mapToSource(proxyIndex);
+            int row = sourceIndex.row();
             auto reply = QMessageBox::question(this, "Confirmation", "Voulez-vous vraiment supprimer cet agent ?");
             if (reply == QMessageBox::Yes) {
                 agentModel->removeRow(row);
                 agentModel->submitAll();
                 agentModel->select();
                 loadPresenceAgents();
+                updateCounter();
             }
+        } else {
+            QMessageBox::warning(this, "Attention", "Veuillez sélectionner un agent à supprimer.");
         }
     });
 
@@ -726,6 +902,56 @@ QWidget* MainWindow::createInfrastructuresPage()
     layout->addLayout(btnLayout);
     
     return page;
+}
+
+void MainWindow::generateMockData()
+{
+    auto reply = QMessageBox::question(this, "Mocks", "Voulez-vous générer des données de test (Agents, Présences, Congés) ?\nCela ne supprime pas les données existantes.");
+    if (reply != QMessageBox::Yes) return;
+    
+    QSqlQuery q;
+    
+    // Génération de 15 agents
+    for (int i = 1; i <= 15; ++i) {
+        QString matricule = QString("MAT-%1").arg(QRandomGenerator::global()->bounded(1000, 9999));
+        q.prepare("INSERT INTO Agents (matricule, nom, postnom, prenom, sexe, grade, fonction, service, ministere, date_engagement) "
+                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        q.addBindValue(matricule);
+        q.addBindValue(QString("NomMock%1").arg(i));
+        q.addBindValue(QString("PostnomMock%1").arg(i));
+        q.addBindValue(QString("Prenom%1").arg(i));
+        q.addBindValue(i % 2 == 0 ? "Féminin" : "Masculin");
+        q.addBindValue(i % 3 == 0 ? "Directeur" : "Attaché d'Administration");
+        q.addBindValue("Chef de Bureau");
+        q.addBindValue(i % 2 == 0 ? "Ressources Humaines" : "Secrétariat");
+        q.addBindValue("Plan et Coordination de l'Aide au Développement");
+        q.addBindValue(QDate::currentDate().addYears(- (i % 10)).toString("dd/MM/yyyy"));
+        q.exec();
+    }
+    
+    // Génération de quelques congés / absences
+    q.exec("SELECT id FROM Agents LIMIT 5");
+    while (q.next()) {
+        int agentId = q.value(0).toInt();
+        QSqlQuery qC;
+        qC.prepare("INSERT INTO Conges (agent_id, type_conge, date_debut, date_fin, duree_jours, mois_annee, motif) "
+                   "VALUES (?, ?, ?, ?, ?, ?, ?)");
+        qC.addBindValue(agentId);
+        qC.addBindValue("Congé Annuel");
+        qC.addBindValue(QDate::currentDate().addDays(-10).toString("dd/MM/yyyy"));
+        qC.addBindValue(QDate::currentDate().addDays(5).toString("dd/MM/yyyy"));
+        qC.addBindValue(15);
+        qC.addBindValue(QDate::currentDate().toString("MM/yyyy"));
+        qC.addBindValue("Congé de reconstitution");
+        qC.exec();
+    }
+
+    QMessageBox::information(this, "Succès", "Données de test générées avec succès !");
+    refreshDashboard();
+    
+    // Refresh models if they are already initialized
+    if(agentModel) agentModel->select();
+    if(presencesModel) presencesModel->select();
 }
 
 void MainWindow::loadPresenceAgents()
