@@ -78,7 +78,7 @@ jobs:
           mkdir release_package
           Copy-Item build/Release/app.exe release_package/fpub.exe -ErrorAction SilentlyContinue
           if (-not (Test-Path release_package/fpub.exe)) { Copy-Item build/app.exe release_package/fpub.exe }
-          windeployqt release_package/fpub.exe
+          windeployqt --compiler-runtime release_package/fpub.exe
           Compress-Archive -Path release_package\* -DestinationPath FonctionPublique-Windows.zip
 
       - name: Create Windows Installer (NSIS)
