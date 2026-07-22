@@ -34,6 +34,14 @@ void FicheAgentDialog::setupUi()
     matriculeEdit = new QLineEdit();
     nomEdit = new QLineEdit();
     postnomEdit = new QLineEdit();
+    prenomEdit = new QLineEdit();
+    
+    sexeCombo = new QComboBox();
+    sexeCombo->addItems({"Homme", "Femme"});
+    
+    etatCivilCombo = new QComboBox();
+    etatCivilCombo->addItems({"Célibataire", "Marié(e)", "Veuf(ve)", "Divorcé(e)"});
+    
     gradeEdit = new QLineEdit();
     fonctionEdit = new QLineEdit();
     
@@ -49,17 +57,26 @@ void FicheAgentDialog::setupUi()
     dateEngagementEdit->setCalendarPopup(true);
     
     salaireEdit = new QLineEdit();
+    primesEdit = new QLineEdit();
+    telephoneEdit = new QLineEdit();
+    adresseEdit = new QLineEdit();
 
     formLayout->addRow("Matricule :", matriculeEdit);
     formLayout->addRow("Nom :", nomEdit);
     formLayout->addRow("Post-nom :", postnomEdit);
+    formLayout->addRow("Prénom :", prenomEdit);
+    formLayout->addRow("Sexe :", sexeCombo);
+    formLayout->addRow("État civil :", etatCivilCombo);
+    formLayout->addRow("Téléphone :", telephoneEdit);
+    formLayout->addRow("Adresse :", adresseEdit);
     formLayout->addRow("Grade :", gradeEdit);
     formLayout->addRow("Fonction :", fonctionEdit);
     formLayout->addRow("Service :", serviceCombo);
     formLayout->addRow("Ministère :", ministereEdit);
     formLayout->addRow("Direction :", directionEdit);
     formLayout->addRow("Date d'engagement :", dateEngagementEdit);
-    formLayout->addRow("Salaire ($) :", salaireEdit);
+    formLayout->addRow("Salaire de base ($) :", salaireEdit);
+    formLayout->addRow("Primes ($) :", primesEdit);
 
     mainLayout->addLayout(formLayout);
 
@@ -82,7 +99,7 @@ void FicheAgentDialog::loadAgentData()
     if (m_agentId == -1) return;
 
     QSqlQuery query;
-    query.prepare("SELECT matricule, nom, postnom, grade, fonction, service, ministere, direction, date_engagement, salaire FROM Agents WHERE id = ?");
+    query.prepare("SELECT matricule, nom, postnom, grade, fonction, service, ministere, direction, date_engagement, salaire, prenom, sexe, etat_civil, telephone, adresse, primes FROM Agents WHERE id = ?");
     query.addBindValue(m_agentId);
     if(query.exec() && query.next()) {
         matriculeEdit->setText(query.value(0).toString());
@@ -98,6 +115,12 @@ void FicheAgentDialog::loadAgentData()
         if(dt.isValid()) dateEngagementEdit->setDate(dt);
         
         salaireEdit->setText(query.value(9).toString());
+        prenomEdit->setText(query.value(10).toString());
+        sexeCombo->setCurrentText(query.value(11).toString());
+        etatCivilCombo->setCurrentText(query.value(12).toString());
+        telephoneEdit->setText(query.value(13).toString());
+        adresseEdit->setText(query.value(14).toString());
+        primesEdit->setText(query.value(15).toString());
     }
 }
 
@@ -110,10 +133,10 @@ void FicheAgentDialog::saveToDatabase()
 
     QSqlQuery query;
     if (m_agentId == -1) {
-        query.prepare("INSERT INTO Agents (matricule, nom, postnom, grade, fonction, service, ministere, direction, date_engagement, salaire) "
-                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        query.prepare("INSERT INTO Agents (matricule, nom, postnom, grade, fonction, service, ministere, direction, date_engagement, salaire, prenom, sexe, etat_civil, telephone, adresse, primes) "
+                      "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     } else {
-        query.prepare("UPDATE Agents SET matricule=?, nom=?, postnom=?, grade=?, fonction=?, service=?, ministere=?, direction=?, date_engagement=?, salaire=? "
+        query.prepare("UPDATE Agents SET matricule=?, nom=?, postnom=?, grade=?, fonction=?, service=?, ministere=?, direction=?, date_engagement=?, salaire=?, prenom=?, sexe=?, etat_civil=?, telephone=?, adresse=?, primes=? "
                       "WHERE id=?");
     }
     
@@ -127,6 +150,12 @@ void FicheAgentDialog::saveToDatabase()
     query.addBindValue(directionEdit->text());
     query.addBindValue(dateEngagementEdit->date().toString("dd/MM/yyyy"));
     query.addBindValue(salaireEdit->text());
+    query.addBindValue(prenomEdit->text());
+    query.addBindValue(sexeCombo->currentText());
+    query.addBindValue(etatCivilCombo->currentText());
+    query.addBindValue(telephoneEdit->text());
+    query.addBindValue(adresseEdit->text());
+    query.addBindValue(primesEdit->text());
     
     if(m_agentId != -1) {
         query.addBindValue(m_agentId);

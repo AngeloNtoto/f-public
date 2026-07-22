@@ -279,10 +279,20 @@ QWidget* MainWindow::createRhPage()
     agentModel->setHeaderData(0, Qt::Horizontal, "ID");
     agentModel->setHeaderData(1, Qt::Horizontal, "Matricule");
     agentModel->setHeaderData(2, Qt::Horizontal, "Nom");
-    agentModel->setHeaderData(3, Qt::Horizontal, "Postnom");
+    agentModel->setHeaderData(3, Qt::Horizontal, "Post-nom");
     agentModel->setHeaderData(4, Qt::Horizontal, "Grade");
     agentModel->setHeaderData(5, Qt::Horizontal, "Fonction");
     agentModel->setHeaderData(6, Qt::Horizontal, "Service");
+    agentModel->setHeaderData(7, Qt::Horizontal, "Ministère");
+    agentModel->setHeaderData(8, Qt::Horizontal, "Direction");
+    agentModel->setHeaderData(9, Qt::Horizontal, "Date d'engagement");
+    agentModel->setHeaderData(10, Qt::Horizontal, "Salaire de base");
+    agentModel->setHeaderData(11, Qt::Horizontal, "Prénom");
+    agentModel->setHeaderData(12, Qt::Horizontal, "Sexe");
+    agentModel->setHeaderData(13, Qt::Horizontal, "État Civil");
+    agentModel->setHeaderData(14, Qt::Horizontal, "Téléphone");
+    agentModel->setHeaderData(15, Qt::Horizontal, "Adresse");
+    agentModel->setHeaderData(16, Qt::Horizontal, "Primes");
 
     QTableView *tableView = new QTableView(page);
     tableView->setModel(agentModel);

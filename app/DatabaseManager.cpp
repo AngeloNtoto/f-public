@@ -70,6 +70,14 @@ bool DatabaseManager::createTables()
     query.exec("ALTER TABLE Agents ADD COLUMN direction TEXT");
     query.exec("ALTER TABLE Agents ADD COLUMN date_engagement TEXT");
     query.exec("ALTER TABLE Agents ADD COLUMN salaire TEXT");
+    
+    // Nouvelles colonnes RH
+    query.exec("ALTER TABLE Agents ADD COLUMN prenom TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN sexe TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN etat_civil TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN telephone TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN adresse TEXT");
+    query.exec("ALTER TABLE Agents ADD COLUMN primes TEXT");
 
     // Table AutorisationSortie
     if (!query.exec("CREATE TABLE IF NOT EXISTS AutorisationSortie ("

@@ -27,6 +27,9 @@ private:
     QLineEdit *matriculeEdit;
     QLineEdit *nomEdit;
     QLineEdit *postnomEdit;
+    QLineEdit *prenomEdit;
+    QComboBox *sexeCombo;
+    QComboBox *etatCivilCombo;
     QLineEdit *gradeEdit;
     QLineEdit *fonctionEdit;
     QComboBox *serviceCombo;
@@ -34,6 +37,9 @@ private:
     QLineEdit *directionEdit;
     QDateEdit *dateEngagementEdit;
     QLineEdit *salaireEdit;
+    QLineEdit *primesEdit;
+    QLineEdit *telephoneEdit;
+    QLineEdit *adresseEdit;
 };
 
 #endif // FICHEAGENTDIALOG_HPP
