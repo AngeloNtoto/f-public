@@ -134,6 +134,34 @@ bool DatabaseManager::createTables()
     }
     query.exec("ALTER TABLE AutorisationSortie ADD COLUMN mentions TEXT");
 
+    // Table LettresExpediees (Registre N°1)
+    if (!query.exec("CREATE TABLE IF NOT EXISTS LettresExpediees ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    "date_jour TEXT, "
+                    "num_lettre TEXT, "
+                    "destinataire TEXT, "
+                    "objet TEXT, "
+                    "nbre_pages INTEGER DEFAULT 1, "
+                    "signature TEXT)")) {
+        qCritical() << "Erreur LettresExpediees:" << query.lastError().text();
+        success = false;
+    }
+
+    // Table LettresRecues (Registre N°2)
+    if (!query.exec("CREATE TABLE IF NOT EXISTS LettresRecues ("
+                    "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    "date_jour TEXT, "
+                    "num_lettre TEXT, "
+                    "date_lettre TEXT, "
+                    "objet TEXT, "
+                    "expediteur TEXT, "
+                    "indice TEXT, "
+                    "nbre_pages INTEGER DEFAULT 1, "
+                    "signature TEXT)")) {
+        qCritical() << "Erreur LettresRecues:" << query.lastError().text();
+        success = false;
+    }
+
     // Table Presences
     if (!query.exec("CREATE TABLE IF NOT EXISTS Presences ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "

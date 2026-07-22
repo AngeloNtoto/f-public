@@ -1312,6 +1312,119 @@ QWidget *MainWindow::createSecretariatPage() {
   layoutPresence->addWidget(tableView);
   tabWidget->addTab(tabPresence, "Gestion des Présences");
 
+  // ================================================================
+  // ONGLET : LETTRES EXPÉDIÉES (Registre N°1)
+  // ================================================================
+  QWidget *tabExpediees = new QWidget();
+  QVBoxLayout *layoutExpediees = new QVBoxLayout(tabExpediees);
+
+  QSqlTableModel *expModel = new QSqlTableModel(this);
+  expModel->setTable("LettresExpediees");
+  expModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
+  expModel->select();
+  expModel->setHeaderData(1, Qt::Horizontal, "Date du Jour");
+  expModel->setHeaderData(2, Qt::Horizontal, "N° de la Lettre");
+  expModel->setHeaderData(3, Qt::Horizontal, "Destinataire");
+  expModel->setHeaderData(4, Qt::Horizontal, "Objet de la Lettre");
+  expModel->setHeaderData(5, Qt::Horizontal, "Nbre de Pages");
+  expModel->setHeaderData(6, Qt::Horizontal, "Signature");
+
+  QTableView *tvExp = new QTableView(tabExpediees);
+  tvExp->setModel(expModel);
+  tvExp->setSelectionBehavior(QAbstractItemView::SelectRows);
+  tvExp->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  tvExp->hideColumn(0); // Cacher id
+  layoutExpediees->addWidget(tvExp);
+
+  QHBoxLayout *btnExpLayout = new QHBoxLayout();
+  QPushButton *btnAddExp = new QPushButton(style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Lettre Expédiée");
+  btnAddExp->setStyleSheet("padding: 8px; background-color: #2980b9; color: white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnDelExp = new QPushButton(style()->standardIcon(QStyle::SP_DialogDiscardButton), "Supprimer");
+  btnDelExp->setStyleSheet("padding: 8px; background-color: #e74c3c; color: white; border-radius: 4px;");
+  QPushButton *btnSaveExp = new QPushButton(style()->standardIcon(QStyle::SP_DialogSaveButton), "Enregistrer");
+  btnSaveExp->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px; font-weight: bold;");
+
+  connect(btnAddExp, &QPushButton::clicked, [expModel, tvExp]() {
+    int row = expModel->rowCount();
+    expModel->insertRow(row);
+    expModel->setData(expModel->index(row, 1), QDate::currentDate().toString("dd/MM/yyyy"));
+    tvExp->scrollToBottom();
+    tvExp->setCurrentIndex(expModel->index(row, 2));
+    tvExp->edit(expModel->index(row, 2));
+  });
+  connect(btnDelExp, &QPushButton::clicked, [expModel, tvExp]() {
+    QModelIndex idx = tvExp->currentIndex();
+    if (idx.isValid()) expModel->removeRow(idx.row());
+  });
+  connect(btnSaveExp, &QPushButton::clicked, [expModel]() {
+    expModel->submitAll();
+  });
+
+  btnExpLayout->addWidget(btnAddExp);
+  btnExpLayout->addWidget(btnDelExp);
+  btnExpLayout->addStretch();
+  btnExpLayout->addWidget(btnSaveExp);
+  layoutExpediees->addLayout(btnExpLayout);
+  tabWidget->addTab(tabExpediees, style()->standardIcon(QStyle::SP_ArrowRight), "Lettres Expédiées");
+
+  // ================================================================
+  // ONGLET : LETTRES REÇUES (Registre N°2)
+  // ================================================================
+  QWidget *tabRecues = new QWidget();
+  QVBoxLayout *layoutRecues = new QVBoxLayout(tabRecues);
+
+  QSqlTableModel *recModel = new QSqlTableModel(this);
+  recModel->setTable("LettresRecues");
+  recModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
+  recModel->select();
+  recModel->setHeaderData(1, Qt::Horizontal, "Date du Jour");
+  recModel->setHeaderData(2, Qt::Horizontal, "N° de la Lettre");
+  recModel->setHeaderData(3, Qt::Horizontal, "Date de la Lettre");
+  recModel->setHeaderData(4, Qt::Horizontal, "Objet de la Lettre");
+  recModel->setHeaderData(5, Qt::Horizontal, "Expéditeur");
+  recModel->setHeaderData(6, Qt::Horizontal, "Indice");
+  recModel->setHeaderData(7, Qt::Horizontal, "Nbre de Pages");
+  recModel->setHeaderData(8, Qt::Horizontal, "Signature");
+
+  QTableView *tvRec = new QTableView(tabRecues);
+  tvRec->setModel(recModel);
+  tvRec->setSelectionBehavior(QAbstractItemView::SelectRows);
+  tvRec->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  tvRec->hideColumn(0);
+  layoutRecues->addWidget(tvRec);
+
+  QHBoxLayout *btnRecLayout = new QHBoxLayout();
+  QPushButton *btnAddRec = new QPushButton(style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Lettre Reçue");
+  btnAddRec->setStyleSheet("padding: 8px; background-color: #8e44ad; color: white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnDelRec = new QPushButton(style()->standardIcon(QStyle::SP_DialogDiscardButton), "Supprimer");
+  btnDelRec->setStyleSheet("padding: 8px; background-color: #e74c3c; color: white; border-radius: 4px;");
+  QPushButton *btnSaveRec = new QPushButton(style()->standardIcon(QStyle::SP_DialogSaveButton), "Enregistrer");
+  btnSaveRec->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px; font-weight: bold;");
+
+  connect(btnAddRec, &QPushButton::clicked, [recModel, tvRec]() {
+    int row = recModel->rowCount();
+    recModel->insertRow(row);
+    recModel->setData(recModel->index(row, 1), QDate::currentDate().toString("dd/MM/yyyy"));
+    tvRec->scrollToBottom();
+    tvRec->setCurrentIndex(recModel->index(row, 2));
+    tvRec->edit(recModel->index(row, 2));
+  });
+  connect(btnDelRec, &QPushButton::clicked, [recModel, tvRec]() {
+    QModelIndex idx = tvRec->currentIndex();
+    if (idx.isValid()) recModel->removeRow(idx.row());
+  });
+  connect(btnSaveRec, &QPushButton::clicked, [recModel]() {
+    recModel->submitAll();
+  });
+
+  btnRecLayout->addWidget(btnAddRec);
+  btnRecLayout->addWidget(btnDelRec);
+  btnRecLayout->addStretch();
+  btnRecLayout->addWidget(btnSaveRec);
+  layoutRecues->addLayout(btnRecLayout);
+  tabWidget->addTab(tabRecues, style()->standardIcon(QStyle::SP_ArrowLeft), "Lettres Reçues");
+
+
   layout->addWidget(tabWidget);
   return page;
 }
