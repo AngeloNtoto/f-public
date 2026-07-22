@@ -686,7 +686,6 @@ QWidget *MainWindow::createRhPage() {
   });
 
   btnLayout->addWidget(btnAdd);
-  btnLayout->addWidget(btnEdit);
   btnLayout->addWidget(btnDelete);
   btnLayout->addStretch();
 
@@ -786,10 +785,11 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   // Tableau des organisations
   orgModel = new QSqlTableModel(this);
   orgModel->setTable("Organisations");
+  orgModel->setEditStrategy(QSqlTableModel::OnFieldChange); // auto-save on edit
   orgModel->select();
 
   // Human-readable column headers (no underscores)
-  QMap<QString, QString> orgHeaders = {
+  const QList<QPair<QString,QString>> orgHeaders = {
       {"id",                    "ID"},
       {"num_enregistrement",    "N° Enregistrement"},
       {"date_reception",        "Date de Réception"},
@@ -816,19 +816,57 @@ QWidget *MainWindow::createSecteursSociauxPage() {
       {"observations",          "Observations"},
       {"decision",              "Décision"},
   };
-  for (auto it = orgHeaders.begin(); it != orgHeaders.end(); ++it) {
-      int idx = orgModel->fieldIndex(it.key());
-      if (idx != -1) orgModel->setHeaderData(idx, Qt::Horizontal, it.value());
+  for (const auto &h : orgHeaders) {
+      int idx = orgModel->fieldIndex(h.first);
+      if (idx != -1) orgModel->setHeaderData(idx, Qt::Horizontal, h.second);
   }
 
+  // Toolbar row: save & refresh
+  QHBoxLayout *orgToolbar = new QHBoxLayout();
+  QPushButton *btnSaveOrg = new QPushButton(
+      style()->standardIcon(QStyle::SP_DialogSaveButton), " Enregistrer les modifications");
+  btnSaveOrg->setStyleSheet("padding: 6px 12px; background-color: #27ae60; "
+                            "color: white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnRefreshOrg = new QPushButton(
+      style()->standardIcon(QStyle::SP_BrowserReload), " Actualiser");
+  btnRefreshOrg->setStyleSheet("padding: 6px 12px; background-color: #2980b9; "
+                               "color: white; border-radius: 4px;");
+  QLabel *editHint = new QLabel("  Double-cliquez sur une cellule pour modifier");
+  editHint->setStyleSheet("color: #7f8c8d; font-style: italic; font-size: 12px;");
+  orgToolbar->addWidget(btnSaveOrg);
+  orgToolbar->addWidget(btnRefreshOrg);
+  orgToolbar->addWidget(editHint);
+  orgToolbar->addStretch();
+  layout->addLayout(orgToolbar);
 
   QTableView *tableView = new QTableView(page);
   tableView->setModel(orgModel);
-
   tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-  tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  tableView->horizontalHeader()->setSectionResizeMode(
-      QHeaderView::ResizeToContents);
+  // Allow editing on double-click or by pressing a key
+  tableView->setEditTriggers(QAbstractItemView::DoubleClicked |
+                             QAbstractItemView::AnyKeyPressed);
+  // Columns: interactive (user can resize by dragging) with a sensible default
+  tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
+  tableView->horizontalHeader()->setDefaultSectionSize(140);
+  tableView->horizontalHeader()->setStretchLastSection(true);
+  tableView->verticalHeader()->setVisible(false);
+  tableView->setAlternatingRowColors(true);
+  tableView->hideColumn(0); // hide raw id column
+
+  connect(btnSaveOrg, &QPushButton::clicked, [this]() {
+      if (orgModel->submitAll()) {
+          QMessageBox::information(this, "Enregistré",
+                                   "Les modifications ont été sauvegardées.");
+      } else {
+          QMessageBox::critical(this, "Erreur",
+                                "Erreur lors de la sauvegarde : " +
+                                orgModel->lastError().text());
+      }
+  });
+  connect(btnRefreshOrg, &QPushButton::clicked, [this]() {
+      orgModel->select();
+  });
+
   layout->addWidget(tableView);
 
   // --- Grille de boutons d'action professionnels ---

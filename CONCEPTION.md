@@ -56,7 +56,7 @@ Fonctions principales :
 - Numéro téléphone M
 - Adresse email M
 - Adresse M
--  Indicateurs clés :
+- Indicateurs clés :
 - Nombre d'agents
 - Nombre de dossiers physiques en ordre
 - Nombre de détenteurs de carte biométrique
@@ -237,3 +237,10 @@ Indicateurs clés :
 - Taux de présence
 - Nombre de stagiaires suivis
 - Résultats d'évaluation
+
+
+
+
+Ajouter : Listes Des biens materiels et equipements de la dicvision provincial dual kwilu
+
+N,Description,quantité,état,Observation
