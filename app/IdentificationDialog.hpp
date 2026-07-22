@@ -17,11 +17,12 @@ class IdentificationDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit IdentificationDialog(QWidget *parent = nullptr);
+    explicit IdentificationDialog(int orgId = -1, QWidget *parent = nullptr);
     ~IdentificationDialog();
 
 private slots:
     void saveToDatabase();
+    void loadData(int orgId);
     void addDirigeantRow();
     void addEffectifRow();
     void addPartenaireRow();
@@ -29,6 +30,7 @@ private slots:
 
 private:
     void setupUi();
+    int m_orgId;
     
     // Tab 1 : Identification & Représentant Légal
     QLineEdit *numEnregistrementEdit;

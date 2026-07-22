@@ -16,12 +16,15 @@
 #include <QSqlError>
 #include <QMessageBox>
 
-IdentificationDialog::IdentificationDialog(QWidget *parent)
-    : QDialog(parent)
+IdentificationDialog::IdentificationDialog(int orgId, QWidget *parent)
+    : QDialog(parent), m_orgId(orgId)
 {
-    setWindowTitle("Fiche de Demande d'Identification - ONG / ASBL / Fondation / EUP");
+    setWindowTitle(m_orgId > 0 ? "Fiche d'Identification (Édition / Consultation)" : "Fiche de Demande d'Identification - ONG / ASBL / Fondation / EUP");
     resize(900, 650);
     setupUi();
+    if (m_orgId > 0) {
+        loadData(m_orgId);
+    }
 }
 
 IdentificationDialog::~IdentificationDialog() {}
@@ -401,16 +404,29 @@ void IdentificationDialog::saveToDatabase()
 
     // 1. Sauvegarde de l'organisation
     QSqlQuery query;
-    query.prepare(
-        "INSERT INTO Organisations ("
-        "num_enregistrement, date_reception, denomination, sigle, nature_juridique, "
-        "date_creation, date_debut_province, num_personnalite_juridique, autorite_delivrance, "
-        "adresse_siege_social, adresse_province, telephone, email, site_web, "
-        "representant_nom, representant_fonction, representant_nationalite, "
-        "representant_phone, representant_email, representant_adresse, "
-        "domaines, zones, documents_annexes, observations, decision"
-        ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-    );
+    if (m_orgId > 0) {
+        query.prepare(
+            "UPDATE Organisations SET "
+            "num_enregistrement=?, date_reception=?, denomination=?, sigle=?, nature_juridique=?, "
+            "date_creation=?, date_debut_province=?, num_personnalite_juridique=?, autorite_delivrance=?, "
+            "adresse_siege_social=?, adresse_province=?, telephone=?, email=?, site_web=?, "
+            "representant_nom=?, representant_fonction=?, representant_nationalite=?, "
+            "representant_phone=?, representant_email=?, representant_adresse=?, "
+            "domaines=?, zones=?, documents_annexes=?, observations=?, decision=? "
+            "WHERE id=?"
+        );
+    } else {
+        query.prepare(
+            "INSERT INTO Organisations ("
+            "num_enregistrement, date_reception, denomination, sigle, nature_juridique, "
+            "date_creation, date_debut_province, num_personnalite_juridique, autorite_delivrance, "
+            "adresse_siege_social, adresse_province, telephone, email, site_web, "
+            "representant_nom, representant_fonction, representant_nationalite, "
+            "representant_phone, representant_email, representant_adresse, "
+            "domaines, zones, documents_annexes, observations, decision"
+            ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        );
+    }
     query.addBindValue(numEnregistrementEdit->text());
     query.addBindValue(dateReceptionEdit->date().toString("dd/MM/yyyy"));
     query.addBindValue(nomEdit->text());
@@ -450,13 +466,26 @@ void IdentificationDialog::saveToDatabase()
     query.addBindValue(observationsEdit->toPlainText());
     query.addBindValue(decisionCombo->currentText());
 
+    if (m_orgId > 0) {
+        query.addBindValue(m_orgId);
+    }
+
     if (!query.exec()) {
         db.rollback();
         QMessageBox::critical(this, "Erreur", "Erreur Organisation :\n" + query.lastError().text());
         return;
     }
 
-    int orgId = query.lastInsertId().toInt();
+    int orgId = (m_orgId > 0) ? m_orgId : query.lastInsertId().toInt();
+
+    if (m_orgId > 0) {
+        // Clear sub tables for full update
+        QSqlQuery delQ;
+        delQ.prepare("DELETE FROM Dirigeants WHERE organisation_id = ?"); delQ.addBindValue(orgId); delQ.exec();
+        delQ.prepare("DELETE FROM Effectifs WHERE organisation_id = ?"); delQ.addBindValue(orgId); delQ.exec();
+        delQ.prepare("DELETE FROM Partenaires WHERE organisation_id = ?"); delQ.addBindValue(orgId); delQ.exec();
+        delQ.prepare("DELETE FROM Projets WHERE organisation_id = ?"); delQ.addBindValue(orgId); delQ.exec();
+    }
 
     // 2. Dirigeants
     for (int i = 0; i < dirigeantsTable->rowCount(); ++i) {
@@ -525,4 +554,120 @@ void IdentificationDialog::saveToDatabase()
     db.commit();
     QMessageBox::information(this, "Succès", "La demande d'identification a été enregistrée avec succès !");
     accept();
+}
+
+void IdentificationDialog::loadData(int orgId)
+{
+    QSqlQuery q;
+    q.prepare("SELECT num_enregistrement, date_reception, denomination, sigle, nature_juridique, "
+              "date_creation, date_debut_province, num_personnalite_juridique, autorite_delivrance, "
+              "adresse_siege_social, adresse_province, telephone, email, site_web, "
+              "representant_nom, representant_fonction, representant_nationalite, "
+              "representant_phone, representant_email, representant_adresse, "
+              "domaines, zones, documents_annexes, observations, decision "
+              "FROM Organisations WHERE id = ?");
+    q.addBindValue(orgId);
+    if (q.exec() && q.next()) {
+        numEnregistrementEdit->setText(q.value(0).toString());
+        dateReceptionEdit->setDate(QDate::fromString(q.value(1).toString(), "dd/MM/yyyy"));
+        nomEdit->setText(q.value(2).toString());
+        sigleEdit->setText(q.value(3).toString());
+        natureCombo->setCurrentText(q.value(4).toString());
+        dateCreationEdit->setDate(QDate::fromString(q.value(5).toString(), "dd/MM/yyyy"));
+        dateDebutProvinceEdit->setDate(QDate::fromString(q.value(6).toString(), "dd/MM/yyyy"));
+        numPersoJuridiqueEdit->setText(q.value(7).toString());
+        autoriteDelivranceEdit->setText(q.value(8).toString());
+        adresseSiegeEdit->setText(q.value(9).toString());
+        adresseProvinceEdit->setText(q.value(10).toString());
+        telephoneEdit->setText(q.value(11).toString());
+        emailEdit->setText(q.value(12).toString());
+        siteWebEdit->setText(q.value(13).toString());
+
+        repNomEdit->setText(q.value(14).toString());
+        repFonctionEdit->setText(q.value(15).toString());
+        repNationaliteEdit->setText(q.value(16).toString());
+        repPhoneEdit->setText(q.value(17).toString());
+        repEmailEdit->setText(q.value(18).toString());
+        repAdresseEdit->setText(q.value(19).toString());
+
+        QStringList domList = q.value(20).toString().split(", ");
+        for (auto cb : domainesChecks) cb->setChecked(domList.contains(cb->text()));
+
+        QStringList zoneList = q.value(21).toString().split(", ");
+        for (auto cb : zonesChecks) cb->setChecked(zoneList.contains(cb->text()));
+
+        QStringList docList = q.value(22).toString().split(", ");
+        for (auto cb : annexesChecks) cb->setChecked(docList.contains(cb->text()));
+
+        observationsEdit->setPlainText(q.value(23).toString());
+        decisionCombo->setCurrentText(q.value(24).toString());
+    }
+
+    // Load Dirigeants
+    QSqlQuery qD;
+    qD.prepare("SELECT num_ordre, nom, fonction, telephone, email FROM Dirigeants WHERE organisation_id = ? ORDER BY num_ordre");
+    qD.addBindValue(orgId);
+    if (qD.exec()) {
+        dirigeantsTable->setRowCount(0);
+        while (qD.next()) {
+            int row = dirigeantsTable->rowCount();
+            dirigeantsTable->insertRow(row);
+            dirigeantsTable->setItem(row, 0, new QTableWidgetItem(qD.value(0).toString()));
+            dirigeantsTable->setItem(row, 1, new QTableWidgetItem(qD.value(1).toString()));
+            dirigeantsTable->setItem(row, 2, new QTableWidgetItem(qD.value(2).toString()));
+            dirigeantsTable->setItem(row, 3, new QTableWidgetItem(qD.value(3).toString()));
+            dirigeantsTable->setItem(row, 4, new QTableWidgetItem(qD.value(4).toString()));
+        }
+    }
+
+    // Load Effectifs
+    QSqlQuery qE;
+    qE.prepare("SELECT num_ordre, categorie, effectif FROM Effectifs WHERE organisation_id = ? ORDER BY num_ordre");
+    qE.addBindValue(orgId);
+    if (qE.exec()) {
+        effectifsTable->setRowCount(0);
+        while (qE.next()) {
+            int row = effectifsTable->rowCount();
+            effectifsTable->insertRow(row);
+            effectifsTable->setItem(row, 0, new QTableWidgetItem(qE.value(0).toString()));
+            effectifsTable->setItem(row, 1, new QTableWidgetItem(qE.value(1).toString()));
+            effectifsTable->setItem(row, 2, new QTableWidgetItem(qE.value(2).toString()));
+        }
+    }
+
+    // Load Partenaires
+    QSqlQuery qP;
+    qP.prepare("SELECT num_ordre, nom_partenaire, pays_org, financement, projet_realise, periode FROM Partenaires WHERE organisation_id = ? ORDER BY num_ordre");
+    qP.addBindValue(orgId);
+    if (qP.exec()) {
+        partenairesTable->setRowCount(0);
+        while (qP.next()) {
+            int row = partenairesTable->rowCount();
+            partenairesTable->insertRow(row);
+            partenairesTable->setItem(row, 0, new QTableWidgetItem(qP.value(0).toString()));
+            partenairesTable->setItem(row, 1, new QTableWidgetItem(qP.value(1).toString()));
+            partenairesTable->setItem(row, 2, new QTableWidgetItem(qP.value(2).toString()));
+            partenairesTable->setItem(row, 3, new QTableWidgetItem(qP.value(3).toString()));
+            partenairesTable->setItem(row, 4, new QTableWidgetItem(qP.value(4).toString()));
+            partenairesTable->setItem(row, 5, new QTableWidgetItem(qP.value(5).toString()));
+        }
+    }
+
+    // Load Projets
+    QSqlQuery qPr;
+    qPr.prepare("SELECT num_ordre, intitule, localisation, budget, bailleur, duree FROM Projets WHERE organisation_id = ? ORDER BY num_ordre");
+    qPr.addBindValue(orgId);
+    if (qPr.exec()) {
+        projetsTable->setRowCount(0);
+        while (qPr.next()) {
+            int row = projetsTable->rowCount();
+            projetsTable->insertRow(row);
+            projetsTable->setItem(row, 0, new QTableWidgetItem(qPr.value(0).toString()));
+            projetsTable->setItem(row, 1, new QTableWidgetItem(qPr.value(1).toString()));
+            projetsTable->setItem(row, 2, new QTableWidgetItem(qPr.value(2).toString()));
+            projetsTable->setItem(row, 3, new QTableWidgetItem(qPr.value(3).toString()));
+            projetsTable->setItem(row, 4, new QTableWidgetItem(qPr.value(4).toString()));
+            projetsTable->setItem(row, 5, new QTableWidgetItem(qPr.value(5).toString()));
+        }
+    }
 }

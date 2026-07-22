@@ -785,88 +785,14 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   // Tableau des organisations
   orgModel = new QSqlTableModel(this);
   orgModel->setTable("Organisations");
-  orgModel->setEditStrategy(QSqlTableModel::OnFieldChange); // auto-save on edit
   orgModel->select();
-
-  // Human-readable column headers (no underscores)
-  const QList<QPair<QString,QString>> orgHeaders = {
-      {"id",                    "ID"},
-      {"num_enregistrement",    "N° Enregistrement"},
-      {"date_reception",        "Date de Réception"},
-      {"denomination",          "Dénomination Officielle"},
-      {"sigle",                 "Sigle"},
-      {"nature_juridique",      "Nature Juridique"},
-      {"date_creation",         "Date de Création"},
-      {"date_debut_province",   "Début Activités Province"},
-      {"num_personnalite",      "N° Personnalité Juridique"},
-      {"autorite_delivrante",   "Autorité Délivrante"},
-      {"adresse_siege",         "Adresse Siège Social"},
-      {"adresse_province",      "Adresse dans la Province"},
-      {"telephone",             "Téléphone"},
-      {"email",                 "Email"},
-      {"site_internet",         "Site Internet"},
-      {"representant_nom",      "Représentant Légal"},
-      {"representant_fonction", "Fonction Rép."},
-      {"representant_national", "Nationalité Rép."},
-      {"representant_tel",      "Tél. Rép."},
-      {"representant_email",    "Email Rép."},
-      {"domaines",              "Domaines d'Intervention"},
-      {"zones",                 "Zones d'Intervention"},
-      {"documents_fournis",     "Documents Fournis"},
-      {"observations",          "Observations"},
-      {"decision",              "Décision"},
-  };
-  for (const auto &h : orgHeaders) {
-      int idx = orgModel->fieldIndex(h.first);
-      if (idx != -1) orgModel->setHeaderData(idx, Qt::Horizontal, h.second);
-  }
-
-  // Toolbar row: save & refresh
-  QHBoxLayout *orgToolbar = new QHBoxLayout();
-  QPushButton *btnSaveOrg = new QPushButton(
-      style()->standardIcon(QStyle::SP_DialogSaveButton), " Enregistrer les modifications");
-  btnSaveOrg->setStyleSheet("padding: 6px 12px; background-color: #27ae60; "
-                            "color: white; border-radius: 4px; font-weight: bold;");
-  QPushButton *btnRefreshOrg = new QPushButton(
-      style()->standardIcon(QStyle::SP_BrowserReload), " Actualiser");
-  btnRefreshOrg->setStyleSheet("padding: 6px 12px; background-color: #2980b9; "
-                               "color: white; border-radius: 4px;");
-  QLabel *editHint = new QLabel("  Double-cliquez sur une cellule pour modifier");
-  editHint->setStyleSheet("color: #7f8c8d; font-style: italic; font-size: 12px;");
-  orgToolbar->addWidget(btnSaveOrg);
-  orgToolbar->addWidget(btnRefreshOrg);
-  orgToolbar->addWidget(editHint);
-  orgToolbar->addStretch();
-  layout->addLayout(orgToolbar);
 
   QTableView *tableView = new QTableView(page);
   tableView->setModel(orgModel);
   tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
-  // Allow editing on double-click or by pressing a key
-  tableView->setEditTriggers(QAbstractItemView::DoubleClicked |
-                             QAbstractItemView::AnyKeyPressed);
-  // Columns: interactive (user can resize by dragging) with a sensible default
-  tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-  tableView->horizontalHeader()->setDefaultSectionSize(140);
-  tableView->horizontalHeader()->setStretchLastSection(true);
-  tableView->verticalHeader()->setVisible(false);
-  tableView->setAlternatingRowColors(true);
-  tableView->hideColumn(0); // hide raw id column
-
-  connect(btnSaveOrg, &QPushButton::clicked, [this]() {
-      if (orgModel->submitAll()) {
-          QMessageBox::information(this, "Enregistré",
-                                   "Les modifications ont été sauvegardées.");
-      } else {
-          QMessageBox::critical(this, "Erreur",
-                                "Erreur lors de la sauvegarde : " +
-                                orgModel->lastError().text());
-      }
-  });
-  connect(btnRefreshOrg, &QPushButton::clicked, [this]() {
-      orgModel->select();
-  });
-
+  tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+  tableView->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::ResizeToContents);
   layout->addWidget(tableView);
 
   // --- Grille de boutons d'action professionnels ---
@@ -919,10 +845,20 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   gridButtons->addWidget(btnCertif, 1, 2);
   layout->addLayout(gridButtons);
 
-  // --- Connexions ---
+  // Clickable & Mutable (Double-click to open & edit item)
+  connect(tableView, &QTableView::doubleClicked, this, [this, tableView, updateSocialKpis](const QModelIndex &index) {
+    if (!index.isValid()) return;
+    int row = index.row();
+    int orgId = orgModel->record(row).value("id").toInt();
+    IdentificationDialog dialog(orgId, this);
+    if (dialog.exec() == QDialog::Accepted) {
+      orgModel->select();
+      updateSocialKpis();
+    }
+  });
 
   connect(btnNewIdent, &QPushButton::clicked, this, [this, updateSocialKpis]() {
-    IdentificationDialog dialog(this);
+    IdentificationDialog dialog(-1, this);
     if (dialog.exec() == QDialog::Accepted) {
       orgModel->select();
       updateSocialKpis();
