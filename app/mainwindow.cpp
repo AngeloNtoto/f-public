@@ -33,111 +33,123 @@
 #include <QTime>
 #include <QVBoxLayout>
 
-#include <QDialog>
-#include <QLineEdit>
 #include <QComboBox>
-#include <QTextEdit>
-#include <QPushButton>
+#include <QDialog>
 #include <QFormLayout>
-#include <QSqlQuery>
-#include <QSqlError>
+#include <QLineEdit>
 #include <QMessageBox>
+#include <QPushButton>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QTextEdit>
 
 class ProjectTrackingDialog : public QDialog {
 public:
-    ProjectTrackingDialog(int orgId, const QString &orgName, QWidget *parent = nullptr)
-        : QDialog(parent), m_orgId(orgId), m_orgName(orgName) {
-        setWindowTitle("Suivi des Projets - " + m_orgName);
-        resize(500, 450);
-        setupUi();
-    }
+  ProjectTrackingDialog(int orgId, const QString &orgName,
+                        QWidget *parent = nullptr)
+      : QDialog(parent), m_orgId(orgId), m_orgName(orgName) {
+    setWindowTitle("Suivi des Projets - " + m_orgName);
+    resize(500, 450);
+    setupUi();
+  }
 
 private:
-    int m_orgId;
-    QString m_orgName;
-    
-    QLineEdit *titreEdit;
-    QLineEdit *localisationEdit;
-    QLineEdit *bailleurEdit;
-    QLineEdit *budgetEdit;
-    QLineEdit *dureeEdit;
-    QLineEdit *beneficiaireEdit;
-    QComboBox *avancementCombo;
-    QTextEdit *observationsEdit;
-    
-    void setupUi() {
-        QVBoxLayout *mainLayout = new QVBoxLayout(this);
-        
-        QLabel *header = new QLabel(QString("<h3>Fiche de suivi de projet pour : %1</h3>").arg(m_orgName));
-        mainLayout->addWidget(header);
-        
-        QFormLayout *formLayout = new QFormLayout();
-        titreEdit = new QLineEdit();
-        localisationEdit = new QLineEdit();
-        bailleurEdit = new QLineEdit();
-        budgetEdit = new QLineEdit();
-        dureeEdit = new QLineEdit();
-        beneficiaireEdit = new QLineEdit();
-        
-        avancementCombo = new QComboBox();
-        avancementCombo->addItems({"Non démarré", "En cours", "Finalisé", "Suspendu"});
-        
-        observationsEdit = new QTextEdit();
-        observationsEdit->setMaximumHeight(80);
-        
-        formLayout->addRow("Titre du projet * :", titreEdit);
-        formLayout->addRow("Localisation :", localisationEdit);
-        formLayout->addRow("Bailleur :", bailleurEdit);
-        formLayout->addRow("Budget :", budgetEdit);
-        formLayout->addRow("Durée :", dureeEdit);
-        formLayout->addRow("Bénéficiaires :", beneficiaireEdit);
-        formLayout->addRow("État d'avancement :", avancementCombo);
-        formLayout->addRow("Observations :", observationsEdit);
-        
-        mainLayout->addLayout(formLayout);
-        
-        QHBoxLayout *btnLayout = new QHBoxLayout();
-        QPushButton *btnSave = new QPushButton("Enregistrer le Suivi");
-        btnSave->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; font-weight: bold; border-radius: 4px;");
-        QPushButton *btnCancel = new QPushButton("Annuler");
-        btnCancel->setStyleSheet("padding: 8px; background-color: #7f8c8d; color: white; border-radius: 4px;");
-        
-        connect(btnSave, &QPushButton::clicked, this, &ProjectTrackingDialog::saveProject);
-        connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
-        
-        btnLayout->addStretch();
-        btnLayout->addWidget(btnCancel);
-        btnLayout->addWidget(btnSave);
-        mainLayout->addLayout(btnLayout);
+  int m_orgId;
+  QString m_orgName;
+
+  QLineEdit *titreEdit;
+  QLineEdit *localisationEdit;
+  QLineEdit *bailleurEdit;
+  QLineEdit *budgetEdit;
+  QLineEdit *dureeEdit;
+  QLineEdit *beneficiaireEdit;
+  QComboBox *avancementCombo;
+  QTextEdit *observationsEdit;
+
+  void setupUi() {
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+
+    QLabel *header = new QLabel(
+        QString("<h3>Fiche de suivi de projet pour : %1</h3>").arg(m_orgName));
+    mainLayout->addWidget(header);
+
+    QFormLayout *formLayout = new QFormLayout();
+    titreEdit = new QLineEdit();
+    localisationEdit = new QLineEdit();
+    bailleurEdit = new QLineEdit();
+    budgetEdit = new QLineEdit();
+    dureeEdit = new QLineEdit();
+    beneficiaireEdit = new QLineEdit();
+
+    avancementCombo = new QComboBox();
+    avancementCombo->addItems(
+        {"Non démarré", "En cours", "Finalisé", "Suspendu"});
+
+    observationsEdit = new QTextEdit();
+    observationsEdit->setMaximumHeight(80);
+
+    formLayout->addRow("Titre du projet * :", titreEdit);
+    formLayout->addRow("Localisation :", localisationEdit);
+    formLayout->addRow("Bailleur :", bailleurEdit);
+    formLayout->addRow("Budget :", budgetEdit);
+    formLayout->addRow("Durée :", dureeEdit);
+    formLayout->addRow("Bénéficiaires :", beneficiaireEdit);
+    formLayout->addRow("État d'avancement :", avancementCombo);
+    formLayout->addRow("Observations :", observationsEdit);
+
+    mainLayout->addLayout(formLayout);
+
+    QHBoxLayout *btnLayout = new QHBoxLayout();
+    QPushButton *btnSave = new QPushButton("Enregistrer le Suivi");
+    btnSave->setStyleSheet("padding: 8px; background-color: #27ae60; color: "
+                           "white; font-weight: bold; border-radius: 4px;");
+    QPushButton *btnCancel = new QPushButton("Annuler");
+    btnCancel->setStyleSheet("padding: 8px; background-color: #7f8c8d; color: "
+                             "white; border-radius: 4px;");
+
+    connect(btnSave, &QPushButton::clicked, this,
+            &ProjectTrackingDialog::saveProject);
+    connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+
+    btnLayout->addStretch();
+    btnLayout->addWidget(btnCancel);
+    btnLayout->addWidget(btnSave);
+    mainLayout->addLayout(btnLayout);
+  }
+
+  void saveProject() {
+    if (titreEdit->text().isEmpty()) {
+      QMessageBox::warning(this, "Erreur",
+                           "Le titre du projet est obligatoire.");
+      return;
     }
-    
-    void saveProject() {
-        if (titreEdit->text().isEmpty()) {
-            QMessageBox::warning(this, "Erreur", "Le titre du projet est obligatoire.");
-            return;
-        }
-        
-        QSqlQuery q;
-        q.prepare("INSERT INTO Projets (organisation_id, nom, intitule, localisation, budget, bailleur, duree, beneficiaire, etat_avancement, observations) "
-                  "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        q.addBindValue(m_orgId);
-        q.addBindValue(titreEdit->text());
-        q.addBindValue(titreEdit->text());
-        q.addBindValue(localisationEdit->text());
-        q.addBindValue(budgetEdit->text());
-        q.addBindValue(bailleurEdit->text());
-        q.addBindValue(dureeEdit->text());
-        q.addBindValue(beneficiaireEdit->text());
-        q.addBindValue(avancementCombo->currentText());
-        q.addBindValue(observationsEdit->toPlainText());
-        
-        if (q.exec()) {
-            QMessageBox::information(this, "Succès", "Fiche de suivi de projet enregistrée.");
-            accept();
-        } else {
-            QMessageBox::critical(this, "Erreur", "Erreur lors de l'enregistrement : " + q.lastError().text());
-        }
+
+    QSqlQuery q;
+    q.prepare(
+        "INSERT INTO Projets (organisation_id, nom, intitule, localisation, "
+        "budget, bailleur, duree, beneficiaire, etat_avancement, observations) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    q.addBindValue(m_orgId);
+    q.addBindValue(titreEdit->text());
+    q.addBindValue(titreEdit->text());
+    q.addBindValue(localisationEdit->text());
+    q.addBindValue(budgetEdit->text());
+    q.addBindValue(bailleurEdit->text());
+    q.addBindValue(dureeEdit->text());
+    q.addBindValue(beneficiaireEdit->text());
+    q.addBindValue(avancementCombo->currentText());
+    q.addBindValue(observationsEdit->toPlainText());
+
+    if (q.exec()) {
+      QMessageBox::information(this, "Succès",
+                               "Fiche de suivi de projet enregistrée.");
+      accept();
+    } else {
+      QMessageBox::critical(this, "Erreur",
+                            "Erreur lors de l'enregistrement : " +
+                                q.lastError().text());
     }
+  }
 };
 
 MainWindow::MainWindow(const QString &userRole, const QString &userName,
@@ -636,13 +648,10 @@ QWidget *MainWindow::createRhPage() {
   // Boutons d'action principaux
   QHBoxLayout *btnLayout = new QHBoxLayout();
   QPushButton *btnAdd = new QPushButton("➕ Nouveau Dossier Agent", page);
-  QPushButton *btnEdit = new QPushButton("👁️ Voir/Éditer Fiche", page);
   QPushButton *btnDelete = new QPushButton("🗑️ Supprimer l'agent", page);
 
   btnAdd->setStyleSheet("padding: 8px 16px; background-color: #27ae60; color: "
                         "white; border-radius: 4px; font-weight: bold;");
-  btnEdit->setStyleSheet("padding: 8px 16px; background-color: #f39c12; color: "
-                         "white; border-radius: 4px; font-weight: bold;");
   btnDelete->setStyleSheet(
       "padding: 8px 16px; background-color: #e74c3c; color: white; "
       "border-radius: 4px; font-weight: bold;");
@@ -653,23 +662,6 @@ QWidget *MainWindow::createRhPage() {
       agentModel->select();
       loadPresenceAgents();
       updateCounter();
-    }
-  });
-
-  connect(btnEdit, &QPushButton::clicked, [this, tableView, updateCounter]() {
-    QModelIndex proxyIndex = tableView->currentIndex();
-    if (proxyIndex.isValid()) {
-      QModelIndex sourceIndex = agentProxyModel->mapToSource(proxyIndex);
-      int row = sourceIndex.row();
-      int agentId = agentModel->record(row).value("id").toInt();
-      FicheAgentDialog dialog(agentId, this);
-      if (dialog.exec() == QDialog::Accepted) {
-        agentModel->select();
-        updateCounter();
-      }
-    } else {
-      QMessageBox::warning(this, "Attention",
-                           "Veuillez sélectionner un agent dans la liste.");
     }
   });
 
@@ -709,25 +701,31 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   layout->setContentsMargins(20, 20, 20, 20);
   layout->setSpacing(15);
 
-  layout->addWidget(new QLabel("<h2>Secteurs Sociaux - Contrôle, Agrément & Suivi (ONG / ASBL / EUP)</h2>", page));
+  layout->addWidget(new QLabel("<h2>Secteurs Sociaux - Contrôle, Agrément & "
+                               "Suivi (ONG / ASBL / EUP)</h2>",
+                               page));
 
   // --- Zone des indicateurs clés (KPIs) ---
   QFrame *kpiFrame = new QFrame(page);
-  kpiFrame->setStyleSheet("QFrame { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; }");
+  kpiFrame->setStyleSheet(
+      "QFrame { background-color: #f8fafc; border: 1px solid #e2e8f0; "
+      "border-radius: 8px; padding: 12px; }");
   QHBoxLayout *kpiLayout = new QHBoxLayout(kpiFrame);
 
   auto createKpiCard = [](const QString &title, const QString &color) {
-      QFrame *card = new QFrame();
-      card->setStyleSheet(QString("background-color: %1; color: white; border-radius: 6px; padding: 8px;").arg(color));
-      QVBoxLayout *l = new QVBoxLayout(card);
-      l->setContentsMargins(5, 5, 5, 5);
-      l->setSpacing(2);
-      QLabel *tLbl = new QLabel(QString("<b>%1</b>").arg(title));
-      tLbl->setStyleSheet("font-size: 10px;");
-      QLabel *vLbl = new QLabel("<h2>-</h2>");
-      l->addWidget(tLbl);
-      l->addWidget(vLbl);
-      return qMakePair(card, vLbl);
+    QFrame *card = new QFrame();
+    card->setStyleSheet(QString("background-color: %1; color: white; "
+                                "border-radius: 6px; padding: 8px;")
+                            .arg(color));
+    QVBoxLayout *l = new QVBoxLayout(card);
+    l->setContentsMargins(5, 5, 5, 5);
+    l->setSpacing(2);
+    QLabel *tLbl = new QLabel(QString("<b>%1</b>").arg(title));
+    tLbl->setStyleSheet("font-size: 10px;");
+    QLabel *vLbl = new QLabel("<h2>-</h2>");
+    l->addWidget(tLbl);
+    l->addWidget(vLbl);
+    return qMakePair(card, vLbl);
   };
 
   auto kpiCertif = createKpiCard("Entités Certifiées", "#27ae60");
@@ -744,35 +742,45 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   layout->addWidget(kpiFrame);
 
   // Fonction de mise à jour dynamique des KPIs
-  auto updateSocialKpis = [kpiCertif, kpiValid, kpiMissions, kpiProjets, kpiPerf]() {
-      QSqlQuery q;
-      
-      // 1. Entités Certifiées (Enregistrement accordé + mission favorable)
-      q.exec("SELECT COUNT(*) FROM Organisations o "
-             "INNER JOIN MissionsVerification m ON o.id = m.organisation_id "
-             "WHERE o.decision = 'Enregistrement accordé' AND m.conclusion != 'Ne remplit pas les conditions'");
-      if(q.next()) kpiCertif.second->setText(QString("<h2>%1</h2>").arg(q.value(0).toInt()));
+  auto updateSocialKpis = [kpiCertif, kpiValid, kpiMissions, kpiProjets,
+                           kpiPerf]() {
+    QSqlQuery q;
 
-      // 2. Enregistrements Validés
-      q.exec("SELECT COUNT(*) FROM Organisations WHERE decision IN ('Enregistrement accordé', 'Dossier confirmé')");
-      if(q.next()) kpiValid.second->setText(QString("<h2>%1</h2>").arg(q.value(0).toInt()));
+    // 1. Entités Certifiées (Enregistrement accordé + mission favorable)
+    q.exec("SELECT COUNT(*) FROM Organisations o "
+           "INNER JOIN MissionsVerification m ON o.id = m.organisation_id "
+           "WHERE o.decision = 'Enregistrement accordé' AND m.conclusion != "
+           "'Ne remplit pas les conditions'");
+    if (q.next())
+      kpiCertif.second->setText(QString("<h2>%1</h2>").arg(q.value(0).toInt()));
 
-      // 3. Missions réalisées
-      q.exec("SELECT COUNT(*) FROM MissionsVerification");
-      if(q.next()) kpiMissions.second->setText(QString("<h2>%1</h2>").arg(q.value(0).toInt()));
+    // 2. Enregistrements Validés
+    q.exec("SELECT COUNT(*) FROM Organisations WHERE decision IN "
+           "('Enregistrement accordé', 'Dossier confirmé')");
+    if (q.next())
+      kpiValid.second->setText(QString("<h2>%1</h2>").arg(q.value(0).toInt()));
 
-      // 4. Projets suivis
-      q.exec("SELECT COUNT(*) FROM Projets");
-      if(q.next()) kpiProjets.second->setText(QString("<h2>%1</h2>").arg(q.value(0).toInt()));
+    // 3. Missions réalisées
+    q.exec("SELECT COUNT(*) FROM MissionsVerification");
+    if (q.next())
+      kpiMissions.second->setText(
+          QString("<h2>%1</h2>").arg(q.value(0).toInt()));
 
-      // 5. Score de performance
-      q.exec("SELECT "
-             "COUNT(CASE WHEN conclusion = 'Existe et exerce' THEN 1 END) * 100 / NULLIF(COUNT(*), 0) "
-             "FROM MissionsVerification");
-      if(q.next()) {
-          int score = q.value(0).isNull() ? 0 : q.value(0).toInt();
-          kpiPerf.second->setText(QString("<h2>%1 %</h2>").arg(score));
-      }
+    // 4. Projets suivis
+    q.exec("SELECT COUNT(*) FROM Projets");
+    if (q.next())
+      kpiProjets.second->setText(
+          QString("<h2>%1</h2>").arg(q.value(0).toInt()));
+
+    // 5. Score de performance
+    q.exec("SELECT "
+           "COUNT(CASE WHEN conclusion = 'Existe et exerce' THEN 1 END) * 100 "
+           "/ NULLIF(COUNT(*), 0) "
+           "FROM MissionsVerification");
+    if (q.next()) {
+      int score = q.value(0).isNull() ? 0 : q.value(0).toInt();
+      kpiPerf.second->setText(QString("<h2>%1 %</h2>").arg(score));
+    }
   };
 
   // Tableau des organisations
@@ -780,34 +788,90 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   orgModel->setTable("Organisations");
   orgModel->select();
 
+  // Human-readable column headers (no underscores)
+  QMap<QString, QString> orgHeaders = {
+      {"id",                    "ID"},
+      {"num_enregistrement",    "N° Enregistrement"},
+      {"date_reception",        "Date de Réception"},
+      {"denomination",          "Dénomination Officielle"},
+      {"sigle",                 "Sigle"},
+      {"nature_juridique",      "Nature Juridique"},
+      {"date_creation",         "Date de Création"},
+      {"date_debut_province",   "Début Activités Province"},
+      {"num_personnalite",      "N° Personnalité Juridique"},
+      {"autorite_delivrante",   "Autorité Délivrante"},
+      {"adresse_siege",         "Adresse Siège Social"},
+      {"adresse_province",      "Adresse dans la Province"},
+      {"telephone",             "Téléphone"},
+      {"email",                 "Email"},
+      {"site_internet",         "Site Internet"},
+      {"representant_nom",      "Représentant Légal"},
+      {"representant_fonction", "Fonction Rép."},
+      {"representant_national", "Nationalité Rép."},
+      {"representant_tel",      "Tél. Rép."},
+      {"representant_email",    "Email Rép."},
+      {"domaines",              "Domaines d'Intervention"},
+      {"zones",                 "Zones d'Intervention"},
+      {"documents_fournis",     "Documents Fournis"},
+      {"observations",          "Observations"},
+      {"decision",              "Décision"},
+  };
+  for (auto it = orgHeaders.begin(); it != orgHeaders.end(); ++it) {
+      int idx = orgModel->fieldIndex(it.key());
+      if (idx != -1) orgModel->setHeaderData(idx, Qt::Horizontal, it.value());
+  }
+
+
   QTableView *tableView = new QTableView(page);
   tableView->setModel(orgModel);
+
   tableView->setSelectionBehavior(QAbstractItemView::SelectRows);
   tableView->setEditTriggers(QAbstractItemView::NoEditTriggers);
-  tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+  tableView->horizontalHeader()->setSectionResizeMode(
+      QHeaderView::ResizeToContents);
   layout->addWidget(tableView);
 
   // --- Grille de boutons d'action professionnels ---
   QGridLayout *gridButtons = new QGridLayout();
   gridButtons->setSpacing(10);
 
-  QPushButton *btnNewIdent = new QPushButton(style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Demande d'Identification");
-  btnNewIdent->setStyleSheet("padding: 10px; background-color: #f39c12; color: white; border-radius: 4px; font-weight: bold;");
-  
-  QPushButton *btnMission = new QPushButton(style()->standardIcon(QStyle::SP_FileDialogContentsView), "Rapport de Mission sur Terrain");
-  btnMission->setStyleSheet("padding: 10px; background-color: #3498db; color: white; border-radius: 4px; font-weight: bold;");
-  
-  QPushButton *btnSuiviProjets = new QPushButton(style()->standardIcon(QStyle::SP_FileDialogListView), "Fiche de Suivi des Projets");
-  btnSuiviProjets->setStyleSheet("padding: 10px; background-color: #e67e22; color: white; border-radius: 4px; font-weight: bold;");
-  
-  QPushButton *btnEvalPerf = new QPushButton(style()->standardIcon(QStyle::SP_DialogApplyButton), "Évaluation Performance & Conformité");
-  btnEvalPerf->setStyleSheet("padding: 10px; background-color: #9b59b6; color: white; border-radius: 4px; font-weight: bold;");
-  
-  QPushButton *btnPubliRapport = new QPushButton(style()->standardIcon(QStyle::SP_FileDialogToParent), "Publication du Rapport par Entité");
-  btnPubliRapport->setStyleSheet("padding: 10px; background-color: #8e44ad; color: white; border-radius: 4px; font-weight: bold;");
-  
-  QPushButton *btnCertif = new QPushButton(style()->standardIcon(QStyle::SP_DialogSaveButton), "Générer Certificat d'Enregistrement");
-  btnCertif->setStyleSheet("padding: 10px; background-color: #27ae60; color: white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnNewIdent =
+      new QPushButton(style()->standardIcon(QStyle::SP_FileIcon),
+                      "Nouvelle Demande d'Identification");
+  btnNewIdent->setStyleSheet("padding: 10px; background-color: #f39c12; color: "
+                             "white; border-radius: 4px; font-weight: bold;");
+
+  QPushButton *btnMission =
+      new QPushButton(style()->standardIcon(QStyle::SP_FileDialogContentsView),
+                      "Rapport de Mission sur Terrain");
+  btnMission->setStyleSheet("padding: 10px; background-color: #3498db; color: "
+                            "white; border-radius: 4px; font-weight: bold;");
+
+  QPushButton *btnSuiviProjets =
+      new QPushButton(style()->standardIcon(QStyle::SP_FileDialogListView),
+                      "Fiche de Suivi des Projets");
+  btnSuiviProjets->setStyleSheet(
+      "padding: 10px; background-color: #e67e22; color: white; border-radius: "
+      "4px; font-weight: bold;");
+
+  QPushButton *btnEvalPerf =
+      new QPushButton(style()->standardIcon(QStyle::SP_DialogApplyButton),
+                      "Évaluation Performance & Conformité");
+  btnEvalPerf->setStyleSheet("padding: 10px; background-color: #9b59b6; color: "
+                             "white; border-radius: 4px; font-weight: bold;");
+
+  QPushButton *btnPubliRapport =
+      new QPushButton(style()->standardIcon(QStyle::SP_FileDialogToParent),
+                      "Publication du Rapport par Entité");
+  btnPubliRapport->setStyleSheet(
+      "padding: 10px; background-color: #8e44ad; color: white; border-radius: "
+      "4px; font-weight: bold;");
+
+  QPushButton *btnCertif =
+      new QPushButton(style()->standardIcon(QStyle::SP_DialogSaveButton),
+                      "Générer Certificat d'Enregistrement");
+  btnCertif->setStyleSheet("padding: 10px; background-color: #27ae60; color: "
+                           "white; border-radius: 4px; font-weight: bold;");
 
   gridButtons->addWidget(btnNewIdent, 0, 0);
   gridButtons->addWidget(btnMission, 0, 1);
@@ -818,98 +882,114 @@ QWidget *MainWindow::createSecteursSociauxPage() {
   layout->addLayout(gridButtons);
 
   // --- Connexions ---
-  
+
   connect(btnNewIdent, &QPushButton::clicked, this, [this, updateSocialKpis]() {
     IdentificationDialog dialog(this);
-    if(dialog.exec() == QDialog::Accepted) {
-        orgModel->select();
-        updateSocialKpis();
+    if (dialog.exec() == QDialog::Accepted) {
+      orgModel->select();
+      updateSocialKpis();
     }
   });
 
-  connect(btnMission, &QPushButton::clicked, this, [this, tableView, updateSocialKpis]() {
-    int row = tableView->currentIndex().row();
-    if (row < 0) {
-      QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation dans la liste.");
-      return;
-    }
-    int orgId = orgModel->record(row).value("id").toInt();
-    QString nomOrg = orgModel->record(row).value("denomination").toString();
+  connect(btnMission, &QPushButton::clicked, this,
+          [this, tableView, updateSocialKpis]() {
+            int row = tableView->currentIndex().row();
+            if (row < 0) {
+              QMessageBox::warning(
+                  this, "Attention",
+                  "Veuillez sélectionner une organisation dans la liste.");
+              return;
+            }
+            int orgId = orgModel->record(row).value("id").toInt();
+            QString nomOrg =
+                orgModel->record(row).value("denomination").toString();
 
-    MissionVerificationDialog dialog(orgId, nomOrg, this);
-    if(dialog.exec() == QDialog::Accepted) {
-        updateSocialKpis();
-    }
-  });
+            MissionVerificationDialog dialog(orgId, nomOrg, this);
+            if (dialog.exec() == QDialog::Accepted) {
+              updateSocialKpis();
+            }
+          });
 
-  connect(btnSuiviProjets, &QPushButton::clicked, this, [this, tableView, updateSocialKpis]() {
-    int row = tableView->currentIndex().row();
-    if (row < 0) {
-      QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation.");
-      return;
-    }
-    int orgId = orgModel->record(row).value("id").toInt();
-    QString nomOrg = orgModel->record(row).value("denomination").toString();
+  connect(btnSuiviProjets, &QPushButton::clicked, this,
+          [this, tableView, updateSocialKpis]() {
+            int row = tableView->currentIndex().row();
+            if (row < 0) {
+              QMessageBox::warning(this, "Attention",
+                                   "Veuillez sélectionner une organisation.");
+              return;
+            }
+            int orgId = orgModel->record(row).value("id").toInt();
+            QString nomOrg =
+                orgModel->record(row).value("denomination").toString();
 
-    ProjectTrackingDialog dialog(orgId, nomOrg, this);
-    if(dialog.exec() == QDialog::Accepted) {
-        updateSocialKpis();
-    }
-  });
+            ProjectTrackingDialog dialog(orgId, nomOrg, this);
+            if (dialog.exec() == QDialog::Accepted) {
+              updateSocialKpis();
+            }
+          });
 
   connect(btnEvalPerf, &QPushButton::clicked, this, [this, tableView]() {
     int row = tableView->currentIndex().row();
     if (row < 0) {
-      QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation.");
+      QMessageBox::warning(this, "Attention",
+                           "Veuillez sélectionner une organisation.");
       return;
     }
     int orgId = orgModel->record(row).value("id").toInt();
     QString nomOrg = orgModel->record(row).value("denomination").toString();
 
     QSqlQuery q;
-    q.prepare("SELECT date_mission, equipe, situation_admin, gouvernance, rh_materiel, "
-              "verification_projets, niveau_execution, impact_communautaire, conclusion "
+    q.prepare("SELECT date_mission, equipe, situation_admin, gouvernance, "
+              "rh_materiel, "
+              "verification_projets, niveau_execution, impact_communautaire, "
+              "conclusion "
               "FROM MissionsVerification WHERE organisation_id = ?");
     q.addBindValue(orgId);
     q.exec();
 
     if (q.next()) {
-        QString text = QString(
-            "<h3>Fiche d'Évaluation - %1</h3>"
-            "<p><b>Date inspection :</b> %2</p>"
-            "<p><b>Équipe inspecteurs :</b> %3</p>"
-            "<p><b>Situation Juridique :</b> %4</p>"
-            "<p><b>Gouvernance institutionnelle :</b> %5</p>"
-            "<p><b>Ressources Humaines & Locaux :</b> %6</p>"
-            "<p><b>Vérification opérationnelle projets :</b> %7</p>"
-            "<p><b>Niveau d'exécution :</b> %8</p>"
-            "<p><b>Impact mesuré :</b> %9</p>"
-            "<p><b>Avis final de conformité :</b> <b><font color='blue'>%10</font></b></p>"
-        ).arg(nomOrg, q.value(0).toString(), q.value(1).toString(), q.value(2).toString(),
-              q.value(3).toString(), q.value(4).toString(), q.value(5).toString(),
-              q.value(6).toString(), q.value(7).toString(), q.value(8).toString());
+      QString text =
+          QString("<h3>Fiche d'Évaluation - %1</h3>"
+                  "<p><b>Date inspection :</b> %2</p>"
+                  "<p><b>Équipe inspecteurs :</b> %3</p>"
+                  "<p><b>Situation Juridique :</b> %4</p>"
+                  "<p><b>Gouvernance institutionnelle :</b> %5</p>"
+                  "<p><b>Ressources Humaines & Locaux :</b> %6</p>"
+                  "<p><b>Vérification opérationnelle projets :</b> %7</p>"
+                  "<p><b>Niveau d'exécution :</b> %8</p>"
+                  "<p><b>Impact mesuré :</b> %9</p>"
+                  "<p><b>Avis final de conformité :</b> <b><font "
+                  "color='blue'>%10</font></b></p>")
+              .arg(nomOrg, q.value(0).toString(), q.value(1).toString(),
+                   q.value(2).toString(), q.value(3).toString(),
+                   q.value(4).toString(), q.value(5).toString(),
+                   q.value(6).toString(), q.value(7).toString(),
+                   q.value(8).toString());
 
-        QDialog *dlg = new QDialog(this);
-        dlg->setWindowTitle("Performance & Conformité");
-        dlg->resize(600, 400);
-        QVBoxLayout *l = new QVBoxLayout(dlg);
-        QTextEdit *te = new QTextEdit();
-        te->setHtml(text);
-        te->setReadOnly(true);
-        l->addWidget(te);
-        QPushButton *closeBtn = new QPushButton("Fermer");
-        connect(closeBtn, &QPushButton::clicked, dlg, &QDialog::accept);
-        l->addWidget(closeBtn);
-        dlg->exec();
+      QDialog *dlg = new QDialog(this);
+      dlg->setWindowTitle("Performance & Conformité");
+      dlg->resize(600, 400);
+      QVBoxLayout *l = new QVBoxLayout(dlg);
+      QTextEdit *te = new QTextEdit();
+      te->setHtml(text);
+      te->setReadOnly(true);
+      l->addWidget(te);
+      QPushButton *closeBtn = new QPushButton("Fermer");
+      connect(closeBtn, &QPushButton::clicked, dlg, &QDialog::accept);
+      l->addWidget(closeBtn);
+      dlg->exec();
     } else {
-        QMessageBox::information(this, "Évaluation indisponible", "Aucune mission de vérification n'a été enregistrée pour cette organisation.");
+      QMessageBox::information(this, "Évaluation indisponible",
+                               "Aucune mission de vérification n'a été "
+                               "enregistrée pour cette organisation.");
     }
   });
 
   connect(btnPubliRapport, &QPushButton::clicked, this, [this, tableView]() {
     int row = tableView->currentIndex().row();
     if (row < 0) {
-      QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation.");
+      QMessageBox::warning(this, "Attention",
+                           "Veuillez sélectionner une organisation.");
       return;
     }
     int orgId = orgModel->record(row).value("id").toInt();
@@ -917,58 +997,68 @@ QWidget *MainWindow::createSecteursSociauxPage() {
     QSqlRecord rec = orgModel->record(row);
 
     // Publication du rapport d'entité complet (HTML/PDF)
-    QString html = QString(
-        "<h1>RAPPORT GÉNÉRAL DE LA DIVISION PROVINCIALE</h1>"
-        "<h2>Entité : %1 (%2)</h2>"
-        "<p><b>Numéro d'enregistrement :</b> %3</p>"
-        "<p><b>Nature juridique :</b> %4</p>"
-        "<p><b>Adresse Kwilu :</b> %5</p>"
-        "<p><b>Téléphone :</b> %6 | <b>Email :</b> %7</p>"
-        "<p><b>Représentant Légal :</b> %8</p>"
-        "<p><b>Domaines d'intervention :</b> %9</p>"
-        "<p><b>Territoires d'intervention :</b> %10</p>"
-        "<p><b>Décision statutaire :</b> %11</p>"
-        "<p><b>Observations :</b> %12</p>"
-    ).arg(nomOrg, rec.value("sigle").toString(), rec.value("num_enregistrement").toString(),
-          rec.value("nature_juridique").toString(), rec.value("adresse_province").toString(),
-          rec.value("telephone").toString(), rec.value("email").toString(),
-          rec.value("representant_nom").toString(), rec.value("domaines").toString(),
-          rec.value("zones").toString(), rec.value("decision").toString(),
-          rec.value("observations").toString());
+    QString html = QString("<h1>RAPPORT GÉNÉRAL DE LA DIVISION PROVINCIALE</h1>"
+                           "<h2>Entité : %1 (%2)</h2>"
+                           "<p><b>Numéro d'enregistrement :</b> %3</p>"
+                           "<p><b>Nature juridique :</b> %4</p>"
+                           "<p><b>Adresse Kwilu :</b> %5</p>"
+                           "<p><b>Téléphone :</b> %6 | <b>Email :</b> %7</p>"
+                           "<p><b>Représentant Légal :</b> %8</p>"
+                           "<p><b>Domaines d'intervention :</b> %9</p>"
+                           "<p><b>Territoires d'intervention :</b> %10</p>"
+                           "<p><b>Décision statutaire :</b> %11</p>"
+                           "<p><b>Observations :</b> %12</p>")
+                       .arg(nomOrg, rec.value("sigle").toString(),
+                            rec.value("num_enregistrement").toString(),
+                            rec.value("nature_juridique").toString(),
+                            rec.value("adresse_province").toString(),
+                            rec.value("telephone").toString(),
+                            rec.value("email").toString(),
+                            rec.value("representant_nom").toString(),
+                            rec.value("domaines").toString(),
+                            rec.value("zones").toString(),
+                            rec.value("decision").toString(),
+                            rec.value("observations").toString());
 
     // Joindre le rapport de mission
     QSqlQuery q;
-    q.prepare("SELECT date_mission, equipe, conclusion, recommandations_structure, recommandations_division FROM MissionsVerification WHERE organisation_id = ?");
+    q.prepare("SELECT date_mission, equipe, conclusion, "
+              "recommandations_structure, recommandations_division FROM "
+              "MissionsVerification WHERE organisation_id = ?");
     q.addBindValue(orgId);
     q.exec();
-    if(q.next()) {
-        html += QString(
-            "<hr><h3>Vérification terrain & Inspection</h3>"
-            "<p><b>Date mission :</b> %1</p>"
-            "<p><b>Inspecteurs :</b> %2</p>"
-            "<p><b>Conclusion :</b> %3</p>"
-            "<p><b>Reco structure :</b> %4</p>"
-            "<p><b>Reco division :</b> %5</p>"
-        ).arg(q.value(0).toString(), q.value(1).toString(), q.value(2).toString(),
-              q.value(3).toString(), q.value(4).toString());
+    if (q.next()) {
+      html += QString("<hr><h3>Vérification terrain & Inspection</h3>"
+                      "<p><b>Date mission :</b> %1</p>"
+                      "<p><b>Inspecteurs :</b> %2</p>"
+                      "<p><b>Conclusion :</b> %3</p>"
+                      "<p><b>Reco structure :</b> %4</p>"
+                      "<p><b>Reco division :</b> %5</p>")
+                  .arg(q.value(0).toString(), q.value(1).toString(),
+                       q.value(2).toString(), q.value(3).toString(),
+                       q.value(4).toString());
     }
 
     QTextDocument document;
     document.setHtml(html);
-    QString fileName = QFileDialog::getSaveFileName(this, "Publier le Rapport complet", "Rapport_Complet_" + nomOrg.replace(" ", "_") + ".pdf", "*.pdf");
-    if(!fileName.isEmpty()) {
-        QPrinter printer(QPrinter::HighResolution);
-        printer.setOutputFormat(QPrinter::PdfFormat);
-        printer.setOutputFileName(fileName);
-        document.print(&printer);
-        QMessageBox::information(this, "Succès", "Rapport complet généré et publié !");
+    QString fileName = QFileDialog::getSaveFileName(
+        this, "Publier le Rapport complet",
+        "Rapport_Complet_" + nomOrg.replace(" ", "_") + ".pdf", "*.pdf");
+    if (!fileName.isEmpty()) {
+      QPrinter printer(QPrinter::HighResolution);
+      printer.setOutputFormat(QPrinter::PdfFormat);
+      printer.setOutputFileName(fileName);
+      document.print(&printer);
+      QMessageBox::information(this, "Succès",
+                               "Rapport complet généré et publié !");
     }
   });
 
   connect(btnCertif, &QPushButton::clicked, this, [this, tableView]() {
     int row = tableView->currentIndex().row();
     if (row < 0) {
-      QMessageBox::warning(this, "Attention", "Veuillez sélectionner une organisation.");
+      QMessageBox::warning(this, "Attention",
+                           "Veuillez sélectionner une organisation.");
       return;
     }
     int orgId = orgModel->record(row).value("id").toInt();
@@ -977,23 +1067,26 @@ QWidget *MainWindow::createSecteursSociauxPage() {
 
     // Vérifier si la mission est validée
     QSqlQuery qCheck;
-    qCheck.prepare("SELECT conclusion FROM MissionsVerification WHERE organisation_id = ?");
+    qCheck.prepare("SELECT conclusion FROM MissionsVerification WHERE "
+                   "organisation_id = ?");
     qCheck.addBindValue(orgId);
     qCheck.exec();
 
     bool missionValidee = false;
     if (qCheck.next()) {
       QString conclusion = qCheck.value(0).toString();
-      if (conclusion == "Existe et exerce" || conclusion == "Existe avec insuffisances") {
+      if (conclusion == "Existe et exerce" ||
+          conclusion == "Existe avec insuffisances") {
         missionValidee = true;
       }
     }
 
     if (decision != "Enregistrement accordé" || !missionValidee) {
-      QMessageBox::warning(this, "Refus",
-                           "Le certificat ne peut être généré que si la "
-                           "décision est 'Enregistrement accordé' ET que le "
-                           "rapport de mission confirme que la structure existe et exerce.");
+      QMessageBox::warning(
+          this, "Refus",
+          "Le certificat ne peut être généré que si la "
+          "décision est 'Enregistrement accordé' ET que le "
+          "rapport de mission confirme que la structure existe et exerce.");
       return;
     }
 
@@ -1033,15 +1126,14 @@ QWidget *MainWindow::createSecteursSociauxPage() {
       printer.setOutputFormat(QPrinter::PdfFormat);
       printer.setOutputFileName(fileName);
       document.print(&printer);
-      QMessageBox::information(this, "Succès", "Le Certificat d'Enregistrement a été généré !");
+      QMessageBox::information(this, "Succès",
+                               "Le Certificat d'Enregistrement a été généré !");
     }
   });
 
   updateSocialKpis(); // Charger les statistiques
   return page;
 }
-
-
 
 QWidget *MainWindow::createSecretariatPage() {
   QWidget *page = new QWidget();
@@ -1120,7 +1212,8 @@ QWidget *MainWindow::createSecretariatPage() {
   auto openAgentFromAuto = [this, tvAuto, autoQueryModel]() {
     if (m_userRole == "Secrétaire") {
       QMessageBox::warning(this, "Accès Refusé",
-                           "Le Secrétariat n'est pas autorisé à accéder aux dossiers des agents.");
+                           "Le Secrétariat n'est pas autorisé à accéder aux "
+                           "dossiers des agents.");
       return;
     }
     int row = tvAuto->currentIndex().row();
@@ -1281,7 +1374,8 @@ QWidget *MainWindow::createSecretariatPage() {
   auto openAgentFromPresence = [this, tableView]() {
     if (m_userRole == "Secrétaire") {
       QMessageBox::warning(this, "Accès Refusé",
-                           "Le Secrétariat n'est pas autorisé à accéder aux dossiers des agents.");
+                           "Le Secrétariat n'est pas autorisé à accéder aux "
+                           "dossiers des agents.");
       return;
     }
     int row = tableView->currentIndex().row();
@@ -1338,35 +1432,43 @@ QWidget *MainWindow::createSecretariatPage() {
   layoutExpediees->addWidget(tvExp);
 
   QHBoxLayout *btnExpLayout = new QHBoxLayout();
-  QPushButton *btnAddExp = new QPushButton(style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Lettre Expédiée");
-  btnAddExp->setStyleSheet("padding: 8px; background-color: #2980b9; color: white; border-radius: 4px; font-weight: bold;");
-  QPushButton *btnDelExp = new QPushButton(style()->standardIcon(QStyle::SP_DialogDiscardButton), "Supprimer");
-  btnDelExp->setStyleSheet("padding: 8px; background-color: #e74c3c; color: white; border-radius: 4px;");
-  QPushButton *btnSaveExp = new QPushButton(style()->standardIcon(QStyle::SP_DialogSaveButton), "Enregistrer");
-  btnSaveExp->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnAddExp = new QPushButton(
+      style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Lettre Expédiée");
+  btnAddExp->setStyleSheet("padding: 8px; background-color: #2980b9; color: "
+                           "white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnDelExp = new QPushButton(
+      style()->standardIcon(QStyle::SP_DialogDiscardButton), "Supprimer");
+  btnDelExp->setStyleSheet("padding: 8px; background-color: #e74c3c; color: "
+                           "white; border-radius: 4px;");
+  QPushButton *btnSaveExp = new QPushButton(
+      style()->standardIcon(QStyle::SP_DialogSaveButton), "Enregistrer");
+  btnSaveExp->setStyleSheet("padding: 8px; background-color: #27ae60; color: "
+                            "white; border-radius: 4px; font-weight: bold;");
 
   connect(btnAddExp, &QPushButton::clicked, [expModel, tvExp]() {
     int row = expModel->rowCount();
     expModel->insertRow(row);
-    expModel->setData(expModel->index(row, 1), QDate::currentDate().toString("dd/MM/yyyy"));
+    expModel->setData(expModel->index(row, 1),
+                      QDate::currentDate().toString("dd/MM/yyyy"));
     tvExp->scrollToBottom();
     tvExp->setCurrentIndex(expModel->index(row, 2));
     tvExp->edit(expModel->index(row, 2));
   });
   connect(btnDelExp, &QPushButton::clicked, [expModel, tvExp]() {
     QModelIndex idx = tvExp->currentIndex();
-    if (idx.isValid()) expModel->removeRow(idx.row());
+    if (idx.isValid())
+      expModel->removeRow(idx.row());
   });
-  connect(btnSaveExp, &QPushButton::clicked, [expModel]() {
-    expModel->submitAll();
-  });
+  connect(btnSaveExp, &QPushButton::clicked,
+          [expModel]() { expModel->submitAll(); });
 
   btnExpLayout->addWidget(btnAddExp);
   btnExpLayout->addWidget(btnDelExp);
   btnExpLayout->addStretch();
   btnExpLayout->addWidget(btnSaveExp);
   layoutExpediees->addLayout(btnExpLayout);
-  tabWidget->addTab(tabExpediees, style()->standardIcon(QStyle::SP_ArrowRight), "Lettres Expédiées");
+  tabWidget->addTab(tabExpediees, style()->standardIcon(QStyle::SP_ArrowRight),
+                    "Lettres Expédiées");
 
   // ================================================================
   // ONGLET : LETTRES REÇUES (Registre N°2)
@@ -1395,36 +1497,43 @@ QWidget *MainWindow::createSecretariatPage() {
   layoutRecues->addWidget(tvRec);
 
   QHBoxLayout *btnRecLayout = new QHBoxLayout();
-  QPushButton *btnAddRec = new QPushButton(style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Lettre Reçue");
-  btnAddRec->setStyleSheet("padding: 8px; background-color: #8e44ad; color: white; border-radius: 4px; font-weight: bold;");
-  QPushButton *btnDelRec = new QPushButton(style()->standardIcon(QStyle::SP_DialogDiscardButton), "Supprimer");
-  btnDelRec->setStyleSheet("padding: 8px; background-color: #e74c3c; color: white; border-radius: 4px;");
-  QPushButton *btnSaveRec = new QPushButton(style()->standardIcon(QStyle::SP_DialogSaveButton), "Enregistrer");
-  btnSaveRec->setStyleSheet("padding: 8px; background-color: #27ae60; color: white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnAddRec = new QPushButton(
+      style()->standardIcon(QStyle::SP_FileIcon), "Nouvelle Lettre Reçue");
+  btnAddRec->setStyleSheet("padding: 8px; background-color: #8e44ad; color: "
+                           "white; border-radius: 4px; font-weight: bold;");
+  QPushButton *btnDelRec = new QPushButton(
+      style()->standardIcon(QStyle::SP_DialogDiscardButton), "Supprimer");
+  btnDelRec->setStyleSheet("padding: 8px; background-color: #e74c3c; color: "
+                           "white; border-radius: 4px;");
+  QPushButton *btnSaveRec = new QPushButton(
+      style()->standardIcon(QStyle::SP_DialogSaveButton), "Enregistrer");
+  btnSaveRec->setStyleSheet("padding: 8px; background-color: #27ae60; color: "
+                            "white; border-radius: 4px; font-weight: bold;");
 
   connect(btnAddRec, &QPushButton::clicked, [recModel, tvRec]() {
     int row = recModel->rowCount();
     recModel->insertRow(row);
-    recModel->setData(recModel->index(row, 1), QDate::currentDate().toString("dd/MM/yyyy"));
+    recModel->setData(recModel->index(row, 1),
+                      QDate::currentDate().toString("dd/MM/yyyy"));
     tvRec->scrollToBottom();
     tvRec->setCurrentIndex(recModel->index(row, 2));
     tvRec->edit(recModel->index(row, 2));
   });
   connect(btnDelRec, &QPushButton::clicked, [recModel, tvRec]() {
     QModelIndex idx = tvRec->currentIndex();
-    if (idx.isValid()) recModel->removeRow(idx.row());
+    if (idx.isValid())
+      recModel->removeRow(idx.row());
   });
-  connect(btnSaveRec, &QPushButton::clicked, [recModel]() {
-    recModel->submitAll();
-  });
+  connect(btnSaveRec, &QPushButton::clicked,
+          [recModel]() { recModel->submitAll(); });
 
   btnRecLayout->addWidget(btnAddRec);
   btnRecLayout->addWidget(btnDelRec);
   btnRecLayout->addStretch();
   btnRecLayout->addWidget(btnSaveRec);
   layoutRecues->addLayout(btnRecLayout);
-  tabWidget->addTab(tabRecues, style()->standardIcon(QStyle::SP_ArrowLeft), "Lettres Reçues");
-
+  tabWidget->addTab(tabRecues, style()->standardIcon(QStyle::SP_ArrowLeft),
+                    "Lettres Reçues");
 
   layout->addWidget(tabWidget);
   return page;
