@@ -33,7 +33,7 @@ public:
         : QSortFilterProxyModel(parent), m_targetColumn(-1) {}
 
     void updateFilter() {
-        invalidateRowsFilter();
+        invalidate();
     }
 
     void setTargetColumn(int col) {
@@ -365,7 +365,7 @@ private:
     // Modèles de données
     QSqlTableModel *agentModel;
     AgentFilterProxyModel *agentProxyModel;
-    QSqlRelationalTableModel *presencesModel;
+    QSqlQueryModel *presencesQueryModel;
     QSqlTableModel *orgModel;
     QSqlTableModel *prodModel;
     QSqlTableModel *infraModel;
@@ -377,6 +377,7 @@ private:
     void loadPresenceAgents();
     void pointerArrivee();
     void pointerDepart();
+    void refreshPresencesTable(const QDate &date);
     
     // Dashboard
     QLabel *lblTotalAgents;

@@ -97,8 +97,8 @@ void AutorisationSortieDialog::saveAndGeneratePdf()
     }
 
     QSqlQuery query;
-    query.prepare("INSERT INTO AutorisationSortie (agent_id, destination, motif, duree, date_depart, date_retour, transport) "
-                  "VALUES (:agent_id, :destination, :motif, :duree, :date_depart, :date_retour, :transport)");
+    query.prepare("INSERT INTO AutorisationSortie (agent_id, destination, motif, duree, date_depart, date_retour, transport, mentions) "
+                  "VALUES (:agent_id, :destination, :motif, :duree, :date_depart, :date_retour, :transport, :mentions)");
     query.bindValue(":agent_id", agentId);
     query.bindValue(":destination", destinationEdit->text());
     query.bindValue(":motif", motifEdit->text());
@@ -109,6 +109,7 @@ void AutorisationSortieDialog::saveAndGeneratePdf()
     query.bindValue(":date_depart", dateDepartEdit->date().toString("dd/MM/yyyy"));
     query.bindValue(":date_retour", dateRetourEdit->date().toString("dd/MM/yyyy"));
     query.bindValue(":transport", transportCombo->currentText());
+    query.bindValue(":mentions", mentionsEdit->text());
 
     if (!query.exec()) {
         QMessageBox::critical(this, "Erreur BDD", "Impossible d'enregistrer l'autorisation : " + query.lastError().text());
@@ -116,19 +117,6 @@ void AutorisationSortieDialog::saveAndGeneratePdf()
     }
 
     int autorisationId = query.lastInsertId().toInt();
-    
-    // --- LIAISON SECRÉTARIAT -> RH ---
-    // Enregistrer automatiquement cette autorisation comme une "Absence Autorisée" dans la table des Congés
-    QSqlQuery qConge;
-    qConge.prepare("INSERT INTO Conges (agent_id, type_conge, date_debut, date_fin, duree_jours, mois_annee, motif) VALUES (?, ?, ?, ?, ?, ?, ?)");
-    qConge.addBindValue(agentId);
-    qConge.addBindValue("Absence Autorisée");
-    qConge.addBindValue(dateDepartEdit->date().toString("dd/MM/yyyy"));
-    qConge.addBindValue(dateRetourEdit->date().toString("dd/MM/yyyy"));
-    qConge.addBindValue(duree);
-    qConge.addBindValue(dateDepartEdit->date().toString("MM/yyyy"));
-    qConge.addBindValue("Autorisation de sortie vers " + destinationEdit->text() + " - " + motifEdit->text());
-    qConge.exec();
     
     generatePdf(autorisationId);
     accept();
