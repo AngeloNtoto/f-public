@@ -1322,12 +1322,13 @@ QWidget *MainWindow::createSecretariatPage() {
   expModel->setTable("LettresExpediees");
   expModel->setEditStrategy(QSqlTableModel::OnManualSubmit);
   expModel->select();
-  expModel->setHeaderData(1, Qt::Horizontal, "Date du Jour");
-  expModel->setHeaderData(2, Qt::Horizontal, "N° de la Lettre");
-  expModel->setHeaderData(3, Qt::Horizontal, "Destinataire");
-  expModel->setHeaderData(4, Qt::Horizontal, "Objet de la Lettre");
-  expModel->setHeaderData(5, Qt::Horizontal, "Nbre de Pages");
-  expModel->setHeaderData(6, Qt::Horizontal, "Signature");
+  expModel->setHeaderData(1, Qt::Horizontal, "N° d'Ordre");
+  expModel->setHeaderData(2, Qt::Horizontal, "Date du Jour");
+  expModel->setHeaderData(3, Qt::Horizontal, "N° de la Lettre");
+  expModel->setHeaderData(4, Qt::Horizontal, "Destinataire");
+  expModel->setHeaderData(5, Qt::Horizontal, "Objet de la Lettre");
+  expModel->setHeaderData(6, Qt::Horizontal, "Nbre de Pages");
+  expModel->setHeaderData(7, Qt::Horizontal, "Signature");
 
   QTableView *tvExp = new QTableView(tabExpediees);
   tvExp->setModel(expModel);

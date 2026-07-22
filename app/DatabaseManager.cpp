@@ -137,6 +137,7 @@ bool DatabaseManager::createTables()
     // Table LettresExpediees (Registre N°1)
     if (!query.exec("CREATE TABLE IF NOT EXISTS LettresExpediees ("
                     "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                    "numero TEXT, "
                     "date_jour TEXT, "
                     "num_lettre TEXT, "
                     "destinataire TEXT, "
@@ -146,6 +147,8 @@ bool DatabaseManager::createTables()
         qCritical() << "Erreur LettresExpediees:" << query.lastError().text();
         success = false;
     }
+    // Ajout de la colonne numero pour les bases existantes
+    query.exec("ALTER TABLE LettresExpediees ADD COLUMN numero TEXT");
 
     // Table LettresRecues (Registre N°2)
     if (!query.exec("CREATE TABLE IF NOT EXISTS LettresRecues ("
