@@ -385,6 +385,9 @@ private:
     QChart *barChart;
     QChart *pieChart;
     void refreshDashboard();
+
+    // Contrôle d'accès
+    QString m_userRole;
 };
 
 #endif // MAINWINDOW_HPP

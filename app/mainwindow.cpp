@@ -146,6 +146,7 @@ MainWindow::MainWindow(const QString &userRole, const QString &userName,
   setWindowTitle(QString("Fonction Publique - Province du Kwilu [%1 : %2]")
                      .arg(userRole, userName));
   resize(1024, 768);
+  m_userRole = userRole;
   setupUi();
 
   // Application des droits d'accès
@@ -1117,6 +1118,11 @@ QWidget *MainWindow::createSecretariatPage() {
 
   // Consultation du dossier de l'agent depuis les autorisations
   auto openAgentFromAuto = [this, tvAuto, autoQueryModel]() {
+    if (m_userRole == "Secrétaire") {
+      QMessageBox::warning(this, "Accès Refusé",
+                           "Le Secrétariat n'est pas autorisé à accéder aux dossiers des agents.");
+      return;
+    }
     int row = tvAuto->currentIndex().row();
     if (row < 0) {
       QMessageBox::warning(this, "Attention",
@@ -1273,6 +1279,11 @@ QWidget *MainWindow::createSecretariatPage() {
 
   // Consultation du dossier de l'agent depuis les présences
   auto openAgentFromPresence = [this, tableView]() {
+    if (m_userRole == "Secrétaire") {
+      QMessageBox::warning(this, "Accès Refusé",
+                           "Le Secrétariat n'est pas autorisé à accéder aux dossiers des agents.");
+      return;
+    }
     int row = tableView->currentIndex().row();
     if (row < 0) {
       QMessageBox::warning(this, "Attention",
